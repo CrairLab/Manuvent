@@ -92,9 +92,9 @@ handles.output.UserData.corrM = corrM;
 handles.output.UserData.plotCorrObj = plotCorrObj;
 
 %Set default percentile value
-handles.Corr_percentile.UserData.curValue = 0.99;
-handles.Corr_percentile.String = num2str(0.99);
-disp('Default percentile for highly correlated region = 99%.')
+handles.Corr_percentile.UserData.curValue = 0.997;
+handles.Corr_percentile.String = num2str(99.7);
+disp('Default percentile for highly correlated region = 99.7%.')
 
 %Set the status text
 handles.Status.Visible = 'On';

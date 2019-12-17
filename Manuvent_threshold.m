@@ -22,7 +22,7 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_threshold
 
-% Last Modified by GUIDE v2.5 16-Dec-2019 15:42:41
+% Last Modified by GUIDE v2.5 17-Dec-2019 13:29:11
 
 % Version 0.0.2 11/01/2019 yixiang.wang@yale.edu
 
@@ -914,3 +914,20 @@ catch
     msgbox('Unable to load the previous movie!', 'Error!')
 end
 
+
+% --- Executes on button press in Renew.
+function Renew_Callback(hObject, eventdata, handles)
+% hObject    handle to Renew (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Clean previous data if existed
+handles.listbox.String = {};
+handles.listbox.UserData.allROI = {};
+handles.listbox.UserData.allROI_info = [];
+handles.listbox.Value = 1;
+
+%Clean index information from the previous movie
+handles.play.UserData = [];
+handles.Movie_control.UserData.curIdx = 1;
+handles.Frame.String = '1';
