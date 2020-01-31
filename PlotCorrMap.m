@@ -128,6 +128,9 @@ function corrM = plotCorrelationMap(plotCorrObj, reg_flag, handles)
     end
     corrM = reshape(corrM, sz(1:2));
     
+    %Specify current axis
+    set(handles.figure1,'CurrentAxes',handles.CorrMap)
+    
     %Plot the correlation map
     hold off;
     im = imagesc(handles.CorrMap, corrM); colormap jet;
