@@ -1,15 +1,15 @@
 function varargout = Manuvent_threshold(varargin)
-% MANUVENT_THRESHOLD MATLAB code for Manuvent_threshold.fig
-%      MANUVENT_THRESHOLD, by itself, creates a new MANUVENT_THRESHOLD or raises the existing
+% MANUVENT_CORR MATLAB code for Manuvent_corr.fig
+%      MANUVENT_CORR, by itself, creates a new MANUVENT_CORR or raises the existing
 %      singleton*.
 %
-%      H = MANUVENT_THRESHOLD returns the handle to a new MANUVENT_THRESHOLD or the handle to
+%      H = MANUVENT_CORR returns the handle to a new MANUVENT_CORR or the handle to
 %      the existing singleton*.
 %
-%      MANUVENT_THRESHOLD('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in MANUVENT_THRESHOLD.M with the given input arguments.
+%      MANUVENT_CORR('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in MANUVENT_CORR.M with the given input arguments.
 %
-%      MANUVENT_THRESHOLD('Property','Value',...) creates a new MANUVENT_THRESHOLD or raises the
+%      MANUVENT_CORR('Property','Value',...) creates a new MANUVENT_CORR or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
 %      applied to the GUI before Manuvent_threshold_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
@@ -20,9 +20,9 @@ function varargout = Manuvent_threshold(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help Manuvent_threshold
+% Edit the above text to modify the response to help Manuvent_corr
 
-% Last Modified by GUIDE v2.5 17-Dec-2019 13:29:11
+% Last Modified by GUIDE v2.5 01-Feb-2020 23:09:19
 
 % Version 0.0.2 11/01/2019 yixiang.wang@yale.edu
 
@@ -46,22 +46,22 @@ end
 
 % End initialization code - DO NOT EDIT
 
-% --- Executes just before Manuvent_threshold is made visible.
+% --- Executes just before Manuvent_corr is made visible.
 function Manuvent_threshold_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to Manuvent_threshold (see VARARGIN)
+% varargin   command line arguments to Manuvent_corr (see VARARGIN)
 
-% Choose default command line output for Manuvent_threshold
+% Choose default command line output for Manuvent_corr
 handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes Manuvent_threshold wait for user response (see UIRESUME)
-% uiwait(handles.Manuvent_threshold);
+% UIWAIT makes Manuvent_corr wait for user response (see UIRESUME)
+% uiwait(handles.Manuvent_corr);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -426,20 +426,28 @@ function markEvents(h,~,handles)
 %when the roi/event was created/initiated and deleted/ended)
 %h        handle of the current image
 %handles  handles of the GUI
-    
-    allROI = handles.listbox.UserData.allROI;
+      
+    roi = drawpoint(h.Parent, 'Color', 'g'); %Drawing a new roi
+    incorporateCurrentRoi(handles,roi); %Incorporate the new roi to related data structure
+
+function incorporateCurrentRoi(handles,roi)
+% This function will incorporate current roi information to existed list
+% and update related data structure
+% handles    handles of current GUI
+% roi        current roi object
+
+    allROI = handles.listbox.UserData.allROI;%Get all ROIs
     allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
     curList = handles.listbox.String; %Get display string from listbox
     curIdx = handles.Movie_control.UserData.curIdx; %Get current frame index
-    
-    roi = drawpoint(h.Parent, 'Color', 'g'); %Drawing a new roi
+
     curPos = round(roi.Position);  %Current xy coordinates
     curStr = [num2str(curIdx) ' ' num2str(curPos(1)) ' ' num2str(curPos(2))]; %New string to be listed in listbox
     curList{end+1} = curStr; %Add new string to string cell array
     handles.listbox.String = curList; %Renew listbox (display new string)
     roi.UserData.Str = curStr; %Attach string information to the new roi
     roi.UserData.Idx = curIdx; %Attach index information to the new roi
-    
+
     roiInfo = [curPos, curIdx, curIdx]; %New roi's info
     if isempty(allROI_info)
         allROI_info = roiInfo;
@@ -449,7 +457,7 @@ function markEvents(h,~,handles)
     allROI{end+1} = roi; %Add new roi obj to current roi array
     handles.listbox.UserData.allROI_info = allROI_info; %Store renewed info list
     handles.listbox.UserData.allROI = allROI; %Store renewed roi array
-    
+
     %Listening to the deleting events
     addlistener(roi, 'DeletingROI', @(src,evt)deleteCallback(src,evt,handles));
     %Listening to the moving events
@@ -458,89 +466,90 @@ function markEvents(h,~,handles)
     addlistener(roi, 'ROIClicked', @(src,evt)clickedCallback(src,evt,handles));
     %Hold the current position
     hold on
-    
+
     %Update current roi
     handles.Plot_correlation.UserData.curROI = roi;
+
     
-    function deleteCallback(roi,~,handles)
-    %Actions to take when deleting the roi
-    %roi     the Point obj
-    %handles     handles of the GUI
-    
+function deleteCallback(roi,~,handles)
+%Actions to take when deleting the roi
+%roi     the Point obj
+%handles     handles of the GUI
+
+%Get the frame index when the delte action is called
+%curIdx = handles.Movie_control.UserData.curIdx;
+%Get the frame index when the roi was created
+%iniIdx = roi.UserData.Idx;
+
+    %Get the current string array from the listbox
+    curList = handles.listbox.String;
+    allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
+    allROI = handles.listbox.UserData.allROI; %Get all roi objects
+
+    allROI_info(strcmp(curList,roi.UserData.Str),:) = []; %Delete the roi info
+    allROI = allROI(~strcmp(curList,roi.UserData.Str)); %Delete the roi obj
+    handles.listbox.UserData.allROI_info = allROI_info; %Store renewed info list
+    handles.listbox.UserData.allROI = allROI; %Store renewed roi array
+
+    curList = curList(~strcmp(curList,roi.UserData.Str)); %Delete the corresponding string
+    handles.listbox.String = curList; %Renew the display
+
+
+function movedCallback(roi,~,handles)
+%Actions to take when moved the roi
+%roi     the Point obj
+%handles     handles of the GUI
+
+    curPos = round(roi.Position);  %Current xy coordinates
+
+    %Get the current string array from the listbox
+    curList = handles.listbox.String;
+    allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
+    allROI = handles.listbox.UserData.allROI; %Get all roi objects
+    allROI_info(strcmp(curList,roi.UserData.Str),1:2) = curPos; %Renew the xy coordinates
+    allROI(strcmp(curList,roi.UserData.Str)) = {roi}; %Renew the roi
+    handles.listbox.UserData.allROI_info = allROI_info; %Store renewed info list
+    handles.listbox.UserData.allROI = allROI; %Store renew obj array
+
+    %New string to be listed in listbox
+    curStr = [num2str(roi.UserData.Idx) ' ' num2str(curPos(1)) ' ' num2str(curPos(2))];            
+
+    curList(strcmp(curList,roi.UserData.Str)) = {curStr}; %Renew the displayed position
+    handles.listbox.String = curList; %Renew the display
+
+    roi.UserData.Str = curStr; %Renew the string info of the roi obj
+    %plot(h.Parent, xy(1), xy(2), 'ro')
+
+function clickedCallback(roi,evt,handles)
+%Actions to take when clicked the roi
+%roi     the Point obj
+%evt     current event
+%handles     handles of the GUI
+
+    if strcmp(evt.SelectionType,'double')
         %Get the frame index when the delte action is called
-        %curIdx = handles.Movie_control.UserData.curIdx;
+        curIdx = handles.Movie_control.UserData.curIdx;
         %Get the frame index when the roi was created
         %iniIdx = roi.UserData.Idx;
-        
-        %Get the current string array from the listbox
-        curList = handles.listbox.String;
-        allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
-        allROI = handles.listbox.UserData.allROI; %Get all roi objects
-                  
-        allROI_info(strcmp(curList,roi.UserData.Str),:) = []; %Delete the roi info
-        allROI = allROI(~strcmp(curList,roi.UserData.Str)); %Delete the roi obj
-        handles.listbox.UserData.allROI_info = allROI_info; %Store renewed info list
-        handles.listbox.UserData.allROI = allROI; %Store renewed roi array
-
-        curList = curList(~strcmp(curList,roi.UserData.Str)); %Delete the corresponding string
-        handles.listbox.String = curList; %Renew the display
-
-        
-    function movedCallback(roi,~,handles)
-    %Actions to take when moved the roi
-    %roi     the Point obj
-    %handles     handles of the GUI
-
-        curPos = round(roi.Position);  %Current xy coordinates
 
         %Get the current string array from the listbox
         curList = handles.listbox.String;
         allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
-        allROI = handles.listbox.UserData.allROI; %Get all roi objects
-        allROI_info(strcmp(curList,roi.UserData.Str),1:2) = curPos; %Renew the xy coordinates
-        allROI(strcmp(curList,roi.UserData.Str)) = {roi}; %Renew the roi
-        handles.listbox.UserData.allROI_info = allROI_info; %Store renewed info list
-        handles.listbox.UserData.allROI = allROI; %Store renew obj array
 
-        %New string to be listed in listbox
-        curStr = [num2str(roi.UserData.Idx) ' ' num2str(curPos(1)) ' ' num2str(curPos(2))];            
+        %Store the current frame index (end of an event) to the roi
+        allROI_info(strcmp(curList,roi.UserData.Str),4) = curIdx;
+        handles.listbox.UserData.allROI_info = allROI_info; %Store the renewed info list
 
-        curList(strcmp(curList,roi.UserData.Str)) = {curStr}; %Renew the displayed position
-        handles.listbox.String = curList; %Renew the display
+        %Make the current roi invisible
+        roi.Visible = 'off';
 
-        roi.UserData.Str = curStr; %Renew the string info of the roi obj
-        %plot(h.Parent, xy(1), xy(2), 'ro')
-       
-    function clickedCallback(roi,evt,handles)
-    %Actions to take when clicked the roi
-    %roi     the Point obj
-    %evt     current event
-    %handles     handles of the GUI
-
-        if strcmp(evt.SelectionType,'double')
-            %Get the frame index when the delte action is called
-            curIdx = handles.Movie_control.UserData.curIdx;
-            %Get the frame index when the roi was created
-            %iniIdx = roi.UserData.Idx;
-
-            %Get the current string array from the listbox
-            curList = handles.listbox.String;
-            allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
-
-            %Store the current frame index (end of an event) to the roi
-            allROI_info(strcmp(curList,roi.UserData.Str),4) = curIdx;
-            handles.listbox.UserData.allROI_info = allROI_info; %Store the renewed info list
-
-            %Make the current roi invisible
-            roi.Visible = 'off';
-
-        elseif strcmp(evt.SelectionType,'left')
-            if roi.Color(2) == 1
-                roi.Color = 'r';
-            else
-                roi.Color = 'g';
-            end
+    elseif strcmp(evt.SelectionType,'left')
+        if roi.Color(2) == 1
+            roi.Color = 'r';
+        else
+            roi.Color = 'g';
         end
+    end
 
 
 
@@ -874,7 +883,7 @@ function regress_flag_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in Next_movie.
-function Next_movie_Callback(hObject, eventdata, handles)
+function Next_movie_Callback(hObject, ~, handles)
 % hObject    handle to Next_movie (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -895,7 +904,7 @@ end
 
 
 % --- Executes on button press in Previous_movie.
-function Previous_movie_Callback(hObject, eventdata, handles)
+function Previous_movie_Callback(~, ~, handles)
 % hObject    handle to Previous_movie (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -931,3 +940,37 @@ handles.listbox.Value = 1;
 handles.play.UserData = [];
 handles.Movie_control.UserData.curIdx = 1;
 handles.Frame.String = '1';
+
+
+% --- Executes on button press in Find_max.
+function Find_max_Callback(hObject, eventdata, handles)
+% hObject    handle to Find_max (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+curMovie = handles.output.UserData.curMovie;%Get current movie
+Mean_response = nanmean(curMovie(:,:,11:15),3);
+[y2 ,x2] = findReccomandMax(Mean_response);
+
+%Create a new roi object 
+set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
+hold on;
+roi = drawpoint(handles.axes1,'Position',[x2 y2]);
+incorporateCurrentRoi(handles,roi); %Incorporate the new roi to related data structure
+
+
+
+
+function [y2 ,x2] = findReccomandMax(corrM)
+%Find the point that shows maximum correlation other than the seed given
+%certain conditions
+
+%Filter to mask out boundary artifact (due to rigid registration)
+filter = ones(5);
+corrM_conv = conv2(corrM,filter,'same');
+
+%Find the maximum point
+max_point = max(corrM_conv(:));
+[y2 ,x2] = find(corrM_conv == max_point);
+%fill([x2-2,x2-2,x2+2,x2+2],[y2-2,y2+2,y2+2,y2-2], 'm')
+
