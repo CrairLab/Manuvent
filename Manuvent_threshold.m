@@ -22,9 +22,9 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_corr
 
-% Last Modified by GUIDE v2.5 01-Feb-2020 23:09:19
+% Last Modified by GUIDE v2.5 02-Feb-2020 20:40:19
 
-% Version 0.0.2 11/01/2019 yixiang.wang@yale.edu
+% Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -98,10 +98,10 @@ if isfield(hObject.UserData, 'filename')&& ~isempty(handles.listbox.UserData.all
 end
 
 %Clean previous data if existed
-%handles.listbox.String = {};
-%handles.listbox.UserData.allROI = {};
-%handles.listbox.UserData.allROI_info = [];
-%handles.listbox.Value = 1;
+handles.listbox.String = {};
+handles.listbox.UserData.allROI = {};
+handles.listbox.UserData.allROI_info = [];
+handles.listbox.Value = 1;
 
 %Show loading progress
 set(handles.Text_load, 'Visible', 'On')
@@ -116,68 +116,69 @@ LoadNewMovie(path, filename, handles);
 function LoadNewMovie(path, filename, handles)
 %Load new movie given path and filename, also renew the axes
     
-load(fullfile(path,filename));
-%hObject.UserData.filename = file;
-handles.Load_movie.UserData.filename = filename;
+    load(fullfile(path,filename));
+    %hObject.UserData.filename = file;
+    handles.Load_movie.UserData.filename = filename;
 
-%Show filename
-handles.Current_filename.String = filename;
+    %Show filename
+    handles.Current_filename.String = filename;
 
-%Get specific tag
-curTag = filename(1:14);
-fileList = dir(['*' curTag '*' '.mat']);
-handles.Load_movie.UserData.fileList = fileList;
+    %Get specific tag
+    curTag = filename(1:14);
+    fileList = dir(['*' curTag '*' '.mat']);
+    handles.Load_movie.UserData.fileList = fileList;
 
-%Get index of current movie
-for i = 1:length(fileList)
-    if strcmp(filename,fileList(i).name)
-        handles.Next_movie.UserData.curMovIdx = i;
-        break;
-    end
-end
-
-
-%Clean index information from the previous movie
-handles.play.UserData = [];
-handles.Movie_control.UserData.curIdx = 1;
-handles.Frame.String = '1';
-
-%Store the movie into a variable curMovie
-try
-    vList = whos; 
-    for i = 1:size(vList,1)
-        %Search for 3D matrix
-        if length(vList(i).size) == 3 
-            curMovie = eval(vList(i).name);
-            %hObject.UserData = curMovie;
-            set(handles.Text_load, 'String', 'Finished!')
-            break
+    %Get index of current movie
+    for i = 1:length(fileList)
+        if strcmp(filename,fileList(i).name)
+            handles.Next_movie.UserData.curMovIdx = i;
+            break;
         end
-    end  
-catch
-    set(handles.Text_load, 'String', 'Error!')
-    msgbox('Can not load the dF over F movie!','Error!')
-    return
-end
+    end
 
-curMovie(curMovie == 0) = nan;
 
-%Save the movie and its size as an object to the UserData of the GUI
-sz = size(curMovie);
-curObj.sz = sz;
-curObj.duration = sz(3);
-curObj.curMovie = curMovie;
-set(handles.output, 'UserData', curObj);
+    %Clean index information from the previous movie
+    handles.play.UserData = [];
+    handles.Movie_control.UserData.curIdx = 1;
+    handles.Frame.String = '1';
 
-%Set parameters for slider1
-set(handles.slider1, 'Min', 1);
-set(handles.slider1, 'Max', sz(3));
-set(handles.slider1, 'Value', 1);
-set(handles.slider1, 'SliderStep', [1/(sz(3)-1), 0.05]);
+    %Store the movie into a variable curMovie
+    try
+        vList = whos; 
+        for i = 1:size(vList,1)
+            %Search for 3D matrix
+            if length(vList(i).size) == 3 
+                curMovie = eval(vList(i).name);
+                %hObject.UserData = curMovie;
+                set(handles.Text_load, 'String', 'Finished!')
+                break
+            end
+        end  
+    catch
+        set(handles.Text_load, 'String', 'Error!')
+        msgbox('Can not load the dF over F movie!','Error!')
+        return
+    end
 
-%hold off;
-im = imshow(mat2gray(curMovie(:,:,1)), 'Parent', handles.axes1);
-set(im, 'ButtonDownFcn', {@markEvents, handles});
+    curMovie(curMovie == 0) = nan;
+
+    %Save the movie and its size as an object to the UserData of the GUI
+    sz = size(curMovie);
+    curObj.sz = sz;
+    curObj.duration = sz(3);
+    curObj.curMovie = curMovie;
+    set(handles.output, 'UserData', curObj);
+
+    %Set parameters for slider1
+    set(handles.slider1, 'Min', 1);
+    set(handles.slider1, 'Max', sz(3));
+    set(handles.slider1, 'Value', 1);
+    set(handles.slider1, 'SliderStep', [1/(sz(3)-1), 0.05]);
+    
+    %Show the first frame
+    hold off;
+    im = imshow(mat2gray(curMovie(:,:,1)), 'Parent', handles.axes1);
+    set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
 
@@ -189,9 +190,11 @@ function Save_data_Callback(hObject, eventdata, handles)
 filename = handles.Load_movie.UserData.filename;
 allROI_info = handles.listbox.UserData.allROI_info;
 allROI = handles.listbox.UserData.allROI;
+start_frame = min(allROI_info(:,3));
+end_frame = max(allROI_info(:,4));
 %save all ROI(events) info as a .mat file
-uisave({'allROI_info', 'allROI'}, [filename(1:end-4) '_allROI.mat']);
-
+uisave({'allROI_info', 'allROI'}, [filename(1:end-4) ...
+    '_' num2str(start_frame) '_' num2str(end_frame) '_allROI.mat']);
 
 % --- Executes on selection change in listbox1.
 function listbox1_Callback(hObject, eventdata, handles)
@@ -662,47 +665,71 @@ function Load_data_Callback(hObject, eventdata, handles)
 % hObject    handle to Load_data (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-Load_movie_Callback(hObject, eventdata, handles)
-
-sz = handles.output.UserData.sz;
-
-%Choose the folder where _allROI.mat files are saved
-selpath = uigetdir('Please choose the folder where the ROI files are!');
-cd(selpath);
-fileList = dir('*allROI*');
-combineROI = {};
-combineROI_info = [];
-for i = 1:size(fileList,1)
-    load(fileList(i).name);
-    combineROI = [combineROI allROI];
-    combineROI_info = [combineROI_info; allROI_info];
+try
+    Load_movie_Callback(hObject, eventdata, handles)
+catch
+    warning('Can not load the movie!')
 end
 
-%Save combined data
-allROI = combineROI;
-allROI_info = combineROI_info;
-filename = fileList(1).name;
-filename = [filename(1: strfind(filename,'allROI')-1) '_combined.mat'];
-save(filename, 'allROI', 'allROI_info')
+try
+    %Choose the folder where _allROI.mat files are saved
+    selpath = uigetdir('Please choose the folder where the ROI files are!');
+    cd(selpath);
+    fileList = dir('*allROI*');
+    combineROI = {};
+    combineROI_info = [];
+    for i = 1:size(fileList,1)
+        load(fileList(i).name);
+        combineROI = [combineROI allROI];
+        combineROI_info = [combineROI_info; allROI_info];
+    end
 
-if sz(3) >= max(combineROI_info(:,4))
-    disp('Sanity check passed...Maximum frame of ROIs does not exceed maximum movie frame.')
-else
-    msgbox('Detect mismatch between the movie and the ROI file!','Error');
+    %Save combined data
+    allROI = combineROI;
+    allROI_info = combineROI_info;
+    %Get the first and last frames.
+    start_frame = min(allROI_info(:,3));
+    end_frame = max(allROI_info(:,4));
+    filename = fileList(1).name;
+    filename = [filename(1: strfind(filename,'filter')-1)...
+        num2str(start_frame) '_' num2str(end_frame) '_combined.mat'];
+
+    %Calculate median duration
+    all_durations = allROI_info(:,4) - allROI_info(:,3);
+    all_durations = all_durations(all_durations > 1);
+    mean_duration = mean(all_durations);
+    median_duration = median(all_durations);
+
+    %Calculate # of bands per minutes
+    bands_per_minute = ...
+        length(allROI)/(max(allROI_info(:,4)) - min(allROI_info(:,3)))*600;
+
+    save(filename, 'allROI', 'allROI_info', 'median_duration', 'bands_per_minute', 'mean_duration')
+
+    sz = handles.output.UserData.sz;
+
+    if sz(3) >= max(combineROI_info(:,4))
+        disp('Sanity check passed...Maximum frame of ROIs does not exceed maximum movie frame.')
+    else
+        msgbox('Detect mismatch between the movie and the ROI file!','Error');
+    end
+
+    %Update UserData
+    handles.listbox.UserData.allROI_info = allROI_info;
+    handles.listbox.UserData.allROI = allROI;
+
+    importedList = {};
+    for i = 1:size(allROI,2)
+        rounded_str = num2str(round(str2num(allROI{i}.UserData.Str)));
+        allROI{i}.UserData.Str = rounded_str;
+        importedList{i,1} = rounded_str;
+    end
+
+    handles.listbox.String = importedList;
+    
+catch
+    msgbox('Can not load data!','Error');
 end
-
-%Update UserData
-handles.listbox.UserData.allROI_info = allROI_info;
-handles.listbox.UserData.allROI = allROI;
-
-importedList = {};
-for i = 1:size(allROI,2)
-    rounded_str = num2str(round(str2num(allROI{i}.UserData.Str)));
-    allROI{i}.UserData.Str = rounded_str;
-    importedList{i,1} = rounded_str;
-end
-
-handles.listbox.String = importedList;
 
 disp('')
 
@@ -728,6 +755,7 @@ function Text_playing_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
 
 
 % --- Executes on button press in Replay.
@@ -771,6 +799,7 @@ set(handles.Text_playing, 'String', 'First frame')
 
 
 
+
 % --- Executes on button press in Hide_pts.
 function Hide_pts_Callback(hObject, eventdata, handles)
 % hObject    handle to Hide_pts (see GCBO)
@@ -803,12 +832,24 @@ catch
     return
 end
 
-sz = size(curMovie);
+%Label all centers and save the image
+median_frame = nanmedian(curMovie,3);
+fh = figure('visible','on');
+fh.WindowState = 'maximized';
+imshow(mat2gray(median_frame))
+hold on
+plot(allROI_info(:,1),allROI_info(:,2),'r*')
+hold off
+saveas(fh,'Labeled_centers.png')
+
+%Get the first and last frames.
+start_frame = min(allROI_info(:,3));
+end_frame = max(allROI_info(:,4));
 
 try
 
     %Construct each frame
-    parfor i = 1:sz(3)
+    parfor i = start_frame:end_frame
         %Get the list of ROIs appear on the current frame
         showList = (allROI_info(:,3) <= i).*(allROI_info(:,4) >= i);
         currCentroids = allROI_info(showList>0, 1:2);       
@@ -823,9 +864,11 @@ try
             disp(num2str(i));
         end
     end
-
+    
+    F = F(start_frame:end_frame);
+    
     %Create output labeled movie name
-    OutputName = 'Labeled_movie.avi';
+    OutputName = ['Labeled_movie_' num2str(start_frame) '_' num2str(end_frame) '.avi'];
 
     % create the video writer with 25 fps
     writerObj = VideoWriter(OutputName);
@@ -925,7 +968,7 @@ end
 
 
 % --- Executes on button press in Renew.
-function Renew_Callback(hObject, eventdata, handles)
+function Renew_Callback(~, eventdata, handles)
 % hObject    handle to Renew (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -956,9 +999,13 @@ Mean_response = nanmean(curMovie(:,:,11:15),3);
 set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
 hold on;
 roi = drawpoint(handles.axes1,'Position',[x2 y2]);
-incorporateCurrentRoi(handles,roi); %Incorporate the new roi to related data structure
+%Incorporate the new roi to related data structure
+incorporateCurrentRoi(handles,roi); 
 
-
+%Show the trace at this pixel
+curTrace = curMovie(y2,x2,:);
+curTrace = curTrace(:);
+plot(handles.Regional_trace, curTrace, 'LineWidth', 2);
 
 
 function [y2 ,x2] = findReccomandMax(corrM)
@@ -974,3 +1021,158 @@ max_point = max(corrM_conv(:));
 [y2 ,x2] = find(corrM_conv == max_point);
 %fill([x2-2,x2-2,x2+2,x2+2],[y2-2,y2+2,y2+2,y2-2], 'm')
 
+
+
+% --- Executes on button press in Crop_movie.
+function Crop_movie_Callback(hObject, eventdata, handles)
+% hObject    handle to Crop_movie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Define roi
+handles.Text_load.String = 'Drawing';
+BW = roipoly;
+handles.Text_load.String = 'Defined';
+
+%Apply roi mask
+curMovie = handles.output.UserData.curMovie;
+curMovie(isnan(curMovie)) = 0;
+sz = size(curMovie);
+BW_3D = repmat(BW, [1,1,sz(3)]);
+A_dFoF_cropped = curMovie.*BW_3D;
+
+%Crop nan and 0 elements
+[dim1_lower,dim1_upper,dim2_lower,dim2_upper] = ...
+    getROIBoundsFromImage(A_dFoF_cropped(:,:,1)); 
+A_dFoF_cropped = ...
+    A_dFoF_cropped(dim1_lower:dim1_upper,dim2_lower:dim2_upper,:); 
+A_dFoF_cropped(A_dFoF_cropped == 0) = nan;
+
+%Save cropped matrix
+handles.Crop_movie.UserData.mask = BW;
+handles.Save_cropped.UserData.A_dFoF_cropped = A_dFoF_cropped;
+
+    function [nZ_1_lower,nZ_1_upper,nZ_2_lower,nZ_2_upper] = getROIBoundsFromImage(cur_img)
+    %    This function identify the coordinates of vertex of the minimum
+    %    rectangle containing the roi
+    %
+    %    Inputs:
+    %        cur_img          A 2D image containg roi
+    %
+    %    Outputs:
+    %        nZ_1_lower      lower left vertex of the minimum rectangle
+    %        nZ_1_upper      upper left vertex of the minimum rectangle
+    %        nZ_2_lower      lower right vertex of the minimum rectangle
+    %        nZ_2_upper      upper right vertex of the minimum rectangle
+
+        if (~any(isnan(cur_img(:)))) && (cur_img(1) == 0) && (cur_img(end) == 0)
+            cur_img = ~(cur_img == 0);
+        else
+            cur_img = ~isnan(cur_img);
+        end
+
+        nZ_2 = find(mean(cur_img,1));
+        nZ_2_upper = max(nZ_2);
+        nZ_2_lower = min(nZ_2);
+        nZ_1 = find(mean(cur_img,2));
+        nZ_1_upper = max(nZ_1);
+        nZ_1_lower = min(nZ_1);
+        
+
+
+% --- Executes on button press in Save_cropped.
+function Save_cropped_Callback(hObject, eventdata, handles)
+% hObject    handle to Save_cropped (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Get cropped matrix
+A_dFoF_cropped = handles.Save_cropped.UserData.A_dFoF_cropped;
+BW = handles.Crop_movie.UserData.mask;
+
+%Save cropped matrix
+filename = handles.Load_movie.UserData.filename;
+uisave({'BW','A_dFoF_cropped'}, [filename(1:end-4) '_cropped.mat']);
+
+%Show progress
+set(handles.Text_load, 'String', 'Saved!')
+
+
+% --- Executes on button press in Probe_one.
+function Probe_one_Callback(hObject, eventdata, handles)
+% hObject    handle to Probe_one (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.Text_playing.Visible = 'On';
+handles.Text_playing.String = 'Select a pixel!';
+
+%Define roi
+set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
+roi = drawpoint('Color', 'm');
+%Listening to the moving events
+addlistener(roi, 'ROIMoved', @(src,evt)updatePlotting(src,evt,handles));
+handles.Text_playing.String = 'Pixel selected!';
+
+%Get roi position
+curPos = round(roi.Position); 
+
+%Show current trace
+showTrace(curPos,handles)
+
+
+
+function showTrace(curRegion,handles)
+    %Get current movie
+    curMovie = handles.output.UserData.curMovie;
+    
+    if length(curRegion) == 2
+        %Get the trace at this pixel
+        curTrace = curMovie(curRegion(2),curRegion(1),:);
+        curTrace = curTrace(:);
+        %Show current position
+        handles.Text_playing.String = [num2str(curRegion(2)) ' ' num2str(curRegion(1))];
+        %Save current Position
+        handles.Probe_one.UserData.regional_stat.curPos = curRegion;
+    else
+    end
+
+    %Show the current Trace
+    plot(handles.Regional_trace, curTrace, 'LineWidth', 2);       
+    %Save the trace and position
+    handles.Probe_one.UserData.regional_stat.curTrace = curTrace;
+
+
+
+function updatePlotting(roi,~,handles)
+%Update Plotting based on current position
+    curPos = round(roi.Position);  %Update current xy coordinates
+    %Show the trace at this pixel
+    showTrace(curPos,handles)
+
+% --- Executes on button press in Probe_region.
+function Probe_region_Callback(hObject, eventdata, handles)
+% hObject    handle to Probe_region (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in Save_region.
+function Save_region_Callback(hObject, eventdata, handles)
+% hObject    handle to Save_region (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in Region_prop.
+function Region_prop_Callback(hObject, eventdata, handles)
+% hObject    handle to Region_prop (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in Dim_reduction.
+function Dim_reduction_Callback(hObject, eventdata, handles)
+% hObject    handle to Dim_reduction (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
