@@ -22,7 +22,7 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_corr
 
-% Last Modified by GUIDE v2.5 04-Feb-2020 15:15:39
+% Last Modified by GUIDE v2.5 05-Feb-2020 11:18:31
 
 % Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
@@ -177,7 +177,7 @@ function LoadNewMovie(path, filename, handles)
     
     %Show the first frame
     hold off;
-    im = imshow(mat2gray(curMovie(:,:,1)), 'Parent', handles.axes1);
+    im = imshow(mat2gray(curMovie(:,:,1)), 'Parent', handles.Movie_axes1);
     set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
@@ -241,7 +241,7 @@ try
     ini_idx = roi_info(3); 
 
     %Show current roi
-    roi.Parent = handles.axes1;
+    roi.Parent = handles.Movie_axes1;
     roi.Visible = 'on';
     roi.Color = 'r';
     pause(0.5);
@@ -260,7 +260,7 @@ try
     handles.Plot_correlation.UserData.curROI = roi;
 
     %Jump to the frame where the current roi was created
-    im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.axes1);
+    im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.Movie_axes1);
     set(im, 'ButtonDownFcn', {@markEvents, handles});
     %Set current index to the initial index of the selected event
     handles.Play_control.UserData.curIdx = ini_idx; 
@@ -300,7 +300,7 @@ function slider1_Callback(hObject, eventdata, handles)
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 curMovie = handles.output.UserData.curMovie; %Get current movie
 curIdx = round(get(hObject, 'Value'));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1);
+im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1);
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.Frame, 'String', num2str(curIdx));
@@ -335,7 +335,7 @@ end
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1); %Display current frame
+im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
@@ -357,7 +357,7 @@ end
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1); %Display current frame
+im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
@@ -406,16 +406,16 @@ try
         set(handles.Frame, 'String', num2str(curIdx));
         set(handles.slider1, 'Value', curIdx);
         handles.Play_control.UserData.curIdx = curIdx; %Update/store current frame index
-        imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1);
+        imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1);
         curIdx = curIdx + 1; %Movie to the next frame
         pause(0.1);
         
     end
     
-    %[x, y] = getpts(handles.axes1);
-    %plot(handles.axes1, x, y, 'ro')
-    %roi = drawpoint(handles.axes1);
-    im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1); %Display current frame
+    %[x, y] = getpts(handles.Movie_axes1);
+    %plot(handles.Movie_axes1, x, y, 'ro')
+    %roi = drawpoint(handles.Movie_axes1);
+    im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
     set(im, 'ButtonDownFcn', {@markEvents, handles});
     hObject.UserData.IsFirstCall = 0; %Now it's not the first time the callback being called
     
@@ -571,7 +571,7 @@ curMovie = handles.output.UserData.curMovie;
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1); %Display current frame
+im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
@@ -625,7 +625,7 @@ try
     curIdx = str2double(get(hObject, 'String'));
     handles.Play_control.UserData.curIdx = curIdx;
     curMovie = handles.output.UserData.curMovie;
-    im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1);
+    im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1);
     set(im, 'ButtonDownFcn', {@markEvents, handles});
     set(handles.slider1, 'Value', curIdx);
 catch
@@ -782,7 +782,7 @@ set(handles.Text_playing, 'Visible', 'On')
 set(handles.Text_playing, 'String', 'Replaying...')
 hObject.Enable = 'off';
 for i = ini_idx:end_idx
-    imshow(mat2gray(curMovie(:,:,i)), 'Parent', handles.axes1);
+    imshow(mat2gray(curMovie(:,:,i)), 'Parent', handles.Movie_axes1);
     pause(0.05)
 end
 set(handles.Text_playing, 'String', 'Last frame')
@@ -790,7 +790,7 @@ pause(1)
 hObject.Enable = 'on';
 
 %Jump to the frame where the current roi was created
-im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.axes1);
+im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.Movie_axes1);
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 %Set current index to the initial index of the selected event
 handles.Play_control.UserData.curIdx = ini_idx; 
@@ -1000,9 +1000,9 @@ Mean_response = nanmean(curMovie(:,:,11:15),3);
 [y2 ,x2] = findReccomandMax(Mean_response);
 
 %Create a new roi object 
-set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
+set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1)
 hold on;
-roi = drawpoint(handles.axes1,'Position',[x2 y2]);
+roi = drawpoint(handles.Movie_axes1,'Position',[x2 y2]);
 %Incorporate the new roi to related data structure
 incorporateCurrentRoi(handles,roi); 
 
@@ -1044,7 +1044,7 @@ function crop_movie(m, handles)
 %Crop the current movie using roipoly or drawrectangle (m == 1 or 2)
     
     if nargin == 1
-        m = 1;
+        m = 1; %Free crop
     end  
     
     %Get current movie
@@ -1054,12 +1054,13 @@ function crop_movie(m, handles)
     
     %Define roi
     handles.Text_load.String = 'Drawing';
-    set(handles.Manuvent_corr,'CurrentAxes',handles.axes1);
+    set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1);
     
+    %Different ways to define rois
     switch m
-        case 1
+        case 1 %Free crop
             BW = roipoly;
-        case 2
+        case 2 %Rectangular crop
             h_rec = drawrectangle('Rotatable', true);
             BW = poly2mask(h_rec.Vertices(:,1),...
                 h_rec.Vertices(:,2), sz(1), sz(2)); 
@@ -1067,6 +1068,9 @@ function crop_movie(m, handles)
             addlistener(h_rec,'ROIMoved',@(src,evt)UpdateRecPos(src,evt,handles));
             %Save the current rectangular roi 
             handles.Save_cropped.UserData.h_rec = h_rec;
+        case 3 %Free crop for background noise
+            handles.Text_load.String = 'Define roi for extracting background noise';
+            BW = roipoly;
     end
     
     %Show progress
@@ -1083,10 +1087,19 @@ function crop_movie(m, handles)
         A_dFoF_cropped(dim1_lower:dim1_upper,dim2_lower:dim2_upper,:); 
     A_dFoF_cropped(A_dFoF_cropped == 0) = nan;
 
-    %Save cropped matrix
-    handles.Save_cropped.UserData.mask = BW;
-    handles.Save_cropped.UserData.A_dFoF_cropped = A_dFoF_cropped;
-    handles.Save_cropped.UserData.h_rec = h_rec;
+    %Save variables
+    if m < 3
+        handles.Save_cropped.UserData.mask = BW;
+        handles.Save_cropped.UserData.A_dFoF_cropped = A_dFoF_cropped;
+    elseif m == 3
+        Avg_noise = nanmean(A_dFoF_cropped,1);
+        Avg_noise = nanmean(Avg_noise,2);
+        Avg_noise = Avg_noise(:);
+        %Save useful information
+        handles.Background_noise.UserData.Avg_noise = Avg_noise;
+        handles.Background_noise.UserData.BW = BW;
+        handles.Save_cropped.UserData.Avg_noise = Avg_noise;
+    end
     
 
 function UpdateRecPos(h_rec,~,handles)
@@ -1150,7 +1163,15 @@ try
     
     %Save the rotated matrix and averaged line movie
     filename = handles.Load_movie.UserData.filename;
-    uisave({'Rec_rotated', 'Avg_line', 'h_rec', 'filename'}, [filename(1:end-4) '_Rotated_rec.mat']);
+    try
+        Avg_noise = handles.Background_noise.UserData.Avg_noise;
+        uisave({'Rec_rotated', 'Avg_line', 'h_rec', 'filename', 'Avg_noise'},...
+            [filename(1:end-4) '_Rotated_rec.mat']);
+    catch
+         msgbox('Recommend to specify noise region first!', 'Warning!')
+         uisave({'Rec_rotated', 'Avg_line', 'h_rec', 'filename'}, [filename(1:end-4) '_Rotated_rec.mat']);
+    end
+   
     handles.Text_playing.Visible = 'Off';
     
 catch
@@ -1223,7 +1244,7 @@ handles.Text_playing.Visible = 'On';
 handles.Text_playing.String = 'Select a pixel!';
 
 %Define roi
-set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
+set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1)
 roi = drawpoint('Color', 'm');
 incorporateCurrentRoi(handles,roi);
 %Listening to the moving events
@@ -1247,7 +1268,7 @@ function Probe_region_Callback(hObject, eventdata, handles)
 %Define roi
 handles.Text_playing.Visible = 'On';
 handles.Text_playing.String = 'Define a region!';
-set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
+set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1)
 BW = roipoly;
 handles.Text_playing.Visible = 'Off';
 
@@ -1323,14 +1344,20 @@ function Clean_trace_Callback(hObject, eventdata, handles)
 
 
 
-% --- Executes on button press in Dim_reduction.
-function Dim_reduction_Callback(hObject, eventdata, handles)
-% hObject    handle to Dim_reduction (see GCBO)
+% --- Executes on button press in Background_noise.
+function Background_noise_Callback(hObject, eventdata, handles)
+% hObject    handle to Background_noise (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
-
+set(handles.Text_playing, 'Visible', 'On')
+set(handles.Text_playing, 'String', 'Define noise region!')
+%Free crop
+crop_movie(3, handles)
+%Get noise region binary matrix
+Noise_region = handles.Background_noise.UserData.BW;
+%Show the averaged trace
+showTrace(Noise_region, handles);
+set(handles.Text_playing, 'Visible', 'Off')
 
 % --- Executes on button press in Deposit_trace.
 function Deposit_trace_Callback(hObject, eventdata, handles)
@@ -1368,6 +1395,13 @@ try
     LineScanObj.Rec_rotated = handles.Rotate_rectangle.UserData.Rec_rotated;
     LineScanObj.filename = handles.Load_movie.UserData.filename;
     LineScanObj.h_rec = handles.Save_cropped.UserData.h_rec;
+    try %See if background noise has been extracted
+        LineScanObj.Avg_noise = handles.Background_noise.UserData.Avg_noise;
+    catch
+        msgbox('Did not specify background noise!', 'Warning!')
+    end
+    
+    %Start LineMapScan GUI
     hObject.UserData.LineScanObj = LineScanObj;
     LineMapScan('hObject');
 catch
