@@ -22,7 +22,7 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_corr
 
-% Last Modified by GUIDE v2.5 02-Feb-2020 20:40:19
+% Last Modified by GUIDE v2.5 04-Feb-2020 15:15:39
 
 % Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
@@ -139,7 +139,7 @@ function LoadNewMovie(path, filename, handles)
 
     %Clean index information from the previous movie
     handles.play.UserData = [];
-    handles.Movie_control.UserData.curIdx = 1;
+    handles.Play_control.UserData.curIdx = 1;
     handles.Frame.String = '1';
 
     %Store the movie into a variable curMovie
@@ -229,46 +229,50 @@ function listbox_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns listbox contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from listbox
 
-curMovie = handles.output.UserData.curMovie;%Get current movie
-curVal = get(hObject,'Value'); %Get current value
-allROI = handles.listbox.UserData.allROI; %Get all ROI objects
-allROI_info = handles.listbox.UserData.allROI_info;
-roi = allROI{curVal}; %Get corresponding roi obj
-roi_info = allROI_info(curVal,:); %Get corresponding roi info
+try
+    curMovie = handles.output.UserData.curMovie;%Get current movie
+    curVal = get(hObject,'Value'); %Get current value
+    allROI = handles.listbox.UserData.allROI; %Get all ROI objects
+    allROI_info = handles.listbox.UserData.allROI_info;
+    roi = allROI{curVal}; %Get corresponding roi obj
+    roi_info = allROI_info(curVal,:); %Get corresponding roi info
 
-%Get the index of the first frame
-ini_idx = roi_info(3); 
+    %Get the index of the first frame
+    ini_idx = roi_info(3); 
 
-%Show current roi
-roi.Parent = handles.axes1;
-roi.Visible = 'on';
-roi.Color = 'r';
-pause(0.5);
-roi.Color = 'g';
+    %Show current roi
+    roi.Parent = handles.axes1;
+    roi.Visible = 'on';
+    roi.Color = 'r';
+    pause(0.5);
+    roi.Color = 'g';
 
-%Listening to the deleting events
-addlistener(roi, 'DeletingROI', @(src,evt)deleteCallback(src,evt,handles));
-%Listening to the moving events
-addlistener(roi, 'ROIMoved', @(src,evt)movedCallback(src,evt,handles));
-%Listening to the clicking events
-addlistener(roi, 'ROIClicked', @(src,evt)clickedCallback(src,evt,handles));
+    %Listening to the deleting events
+    addlistener(roi, 'DeletingROI', @(src,evt)deleteCallback(src,evt,handles));
+    %Listening to the moving events
+    addlistener(roi, 'ROIMoved', @(src,evt)movedCallback(src,evt,handles));
+    %Listening to the clicking events
+    addlistener(roi, 'ROIClicked', @(src,evt)clickedCallback(src,evt,handles));
 
-hold on;
+    hold on;
 
-%Update current roi
-handles.Plot_correlation.UserData.curROI = roi;
+    %Update current roi
+    handles.Plot_correlation.UserData.curROI = roi;
 
-%Jump to the frame where the current roi was created
-im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.axes1);
-set(im, 'ButtonDownFcn', {@markEvents, handles});
-%Set current index to the initial index of the selected event
-handles.Movie_control.UserData.curIdx = ini_idx; 
-%Reset slider value
-handles.slider1.Value = ini_idx;
-%Reset Frame editbox string
-handles.Frame.String = num2str(ini_idx);
+    %Jump to the frame where the current roi was created
+    im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.axes1);
+    set(im, 'ButtonDownFcn', {@markEvents, handles});
+    %Set current index to the initial index of the selected event
+    handles.Play_control.UserData.curIdx = ini_idx; 
+    %Reset slider value
+    handles.slider1.Value = ini_idx;
+    %Reset Frame editbox string
+    handles.Frame.String = num2str(ini_idx);
 
-set(handles.Text_playing, 'String', 'First frame')
+    set(handles.Text_playing, 'String', 'First frame')
+catch
+    warning('Something wrong to load the listbox!')
+end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -298,7 +302,7 @@ curMovie = handles.output.UserData.curMovie; %Get current movie
 curIdx = round(get(hObject, 'Value'));
 im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1);
 set(im, 'ButtonDownFcn', {@markEvents, handles});
-handles.Movie_control.UserData.curIdx = curIdx;
+handles.Play_control.UserData.curIdx = curIdx;
 set(handles.Frame, 'String', num2str(curIdx));
 
 
@@ -321,14 +325,14 @@ function FastBackward_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 curMovie = handles.output.UserData.curMovie;
-curIdx = handles.Movie_control.UserData.curIdx;
+curIdx = handles.Play_control.UserData.curIdx;
 
 if (curIdx - 10) < 1
     curIdx = 1;
 else
     curIdx = curIdx - 10; %Fast backward 10 frames
 end
-handles.Movie_control.UserData.curIdx = curIdx;
+handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
 im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1); %Display current frame
@@ -343,14 +347,14 @@ function FastForward_Callback(hObject, eventdata, handles)
 
 duration = handles.output.UserData.duration;
 curMovie = handles.output.UserData.curMovie;
-curIdx = handles.Movie_control.UserData.curIdx;
+curIdx = handles.Play_control.UserData.curIdx;
 
 if (curIdx + 10) > duration
     curIdx = duration;
 else
     curIdx = curIdx + 10;
 end
-handles.Movie_control.UserData.curIdx = curIdx;
+handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
 im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1); %Display current frame
@@ -373,7 +377,7 @@ try
     end
     
     hObject.UserData.curFlag = curFlag; %Update/store the renewed flag 
-    curIdx = handles.Movie_control.UserData.curIdx; %Get current index
+    curIdx = handles.Play_control.UserData.curIdx; %Get current index
     curObj = handles.output.UserData; 
     curMovie = curObj.curMovie; %Get current movie
     duration = handles.output.UserData.duration;%Get movie duration
@@ -388,7 +392,7 @@ try
         if hObject.UserData.curFlag && ~hObject.UserData.IsFirstCall
             %When callback if the previous action was 'Pause' and if it is
             %not the first time the callback function being called
-            handles.Movie_control.UserData.curIdx = curIdx; %Update/store current frame index
+            handles.Play_control.UserData.curIdx = curIdx; %Update/store current frame index
             break
         end        
         
@@ -401,7 +405,7 @@ try
         
         set(handles.Frame, 'String', num2str(curIdx));
         set(handles.slider1, 'Value', curIdx);
-        handles.Movie_control.UserData.curIdx = curIdx; %Update/store current frame index
+        handles.Play_control.UserData.curIdx = curIdx; %Update/store current frame index
         imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1);
         curIdx = curIdx + 1; %Movie to the next frame
         pause(0.1);
@@ -442,7 +446,7 @@ function incorporateCurrentRoi(handles,roi)
     allROI = handles.listbox.UserData.allROI;%Get all ROIs
     allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
     curList = handles.listbox.String; %Get display string from listbox
-    curIdx = handles.Movie_control.UserData.curIdx; %Get current frame index
+    curIdx = handles.Play_control.UserData.curIdx; %Get current frame index
 
     curPos = round(roi.Position);  %Current xy coordinates
     curStr = [num2str(curIdx) ' ' num2str(curPos(1)) ' ' num2str(curPos(2))]; %New string to be listed in listbox
@@ -480,7 +484,7 @@ function deleteCallback(roi,~,handles)
 %handles     handles of the GUI
 
 %Get the frame index when the delte action is called
-%curIdx = handles.Movie_control.UserData.curIdx;
+%curIdx = handles.Play_control.UserData.curIdx;
 %Get the frame index when the roi was created
 %iniIdx = roi.UserData.Idx;
 
@@ -531,7 +535,7 @@ function clickedCallback(roi,evt,handles)
 
     if strcmp(evt.SelectionType,'double')
         %Get the frame index when the delte action is called
-        curIdx = handles.Movie_control.UserData.curIdx;
+        curIdx = handles.Play_control.UserData.curIdx;
         %Get the frame index when the roi was created
         %iniIdx = roi.UserData.Idx;
 
@@ -557,14 +561,14 @@ function clickedCallback(roi,evt,handles)
 
 
 % --- Executes on button press in Stop.
-function Stop_Callback(hObject, eventdata, handles)
+function Stop_Callback(hObject, ~, handles)
 % hObject    handle to Stop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 curIdx = 1; %Reset to the first frame
 curMovie = handles.output.UserData.curMovie;
-handles.Movie_control.UserData.curIdx = curIdx;
+handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
 im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1); %Display current frame
@@ -601,8 +605,8 @@ function play_CreateFcn(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function Movie_control_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to Movie_control (see GCBO)
+function Play_control_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Play_control (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 hObject.UserData.curIdx = 1;
@@ -619,7 +623,7 @@ function Frame_Callback(hObject, eventdata, handles)
 
 try
     curIdx = str2double(get(hObject, 'String'));
-    handles.Movie_control.UserData.curIdx = curIdx;
+    handles.Play_control.UserData.curIdx = curIdx;
     curMovie = handles.output.UserData.curMovie;
     im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1);
     set(im, 'ButtonDownFcn', {@markEvents, handles});
@@ -789,7 +793,7 @@ hObject.Enable = 'on';
 im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.axes1);
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 %Set current index to the initial index of the selected event
-handles.Movie_control.UserData.curIdx = ini_idx; 
+handles.Play_control.UserData.curIdx = ini_idx; 
 %Reset slider value
 handles.slider1.Value = ini_idx;
 %Reset Frame editbox string
@@ -981,7 +985,7 @@ handles.listbox.Value = 1;
 
 %Clean index information from the previous movie
 handles.play.UserData = [];
-handles.Movie_control.UserData.curIdx = 1;
+handles.Play_control.UserData.curIdx = 1;
 handles.Frame.String = '1';
 
 
@@ -1007,6 +1011,11 @@ curTrace = curMovie(y2,x2,:);
 curTrace = curTrace(:);
 plot(handles.Regional_trace, curTrace, 'LineWidth', 2);
 
+%Save the position and current trace;
+handles.Regional_stat.UserData.regional_stat.curPos = [x2, y2];
+handles.Regional_stat.UserData.regional_stat.curTrace = curTrace;
+
+
 
 function [y2 ,x2] = findReccomandMax(corrM)
 %Find the point that shows maximum correlation other than the seed given
@@ -1023,60 +1032,167 @@ max_point = max(corrM_conv(:));
 
 
 
-% --- Executes on button press in Crop_movie.
-function Crop_movie_Callback(hObject, eventdata, handles)
-% hObject    handle to Crop_movie (see GCBO)
+% --- Executes on button press in Free_crop.
+function Free_crop_Callback(hObject, eventdata, handles)
+% hObject    handle to Free_crop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+crop_movie(1, handles);
 
-%Define roi
-handles.Text_load.String = 'Drawing';
-BW = roipoly;
-handles.Text_load.String = 'Defined';
 
-%Apply roi mask
-curMovie = handles.output.UserData.curMovie;
-curMovie(isnan(curMovie)) = 0;
-sz = size(curMovie);
-BW_3D = repmat(BW, [1,1,sz(3)]);
-A_dFoF_cropped = curMovie.*BW_3D;
+function crop_movie(m, handles)
+%Crop the current movie using roipoly or drawrectangle (m == 1 or 2)
+    
+    if nargin == 1
+        m = 1;
+    end  
+    
+    %Get current movie
+    curMovie = handles.output.UserData.curMovie;
+    curMovie(isnan(curMovie)) = 0;
+    sz = size(curMovie);
+    
+    %Define roi
+    handles.Text_load.String = 'Drawing';
+    set(handles.Manuvent_corr,'CurrentAxes',handles.axes1);
+    
+    switch m
+        case 1
+            BW = roipoly;
+        case 2
+            h_rec = drawrectangle('Rotatable', true);
+            BW = poly2mask(h_rec.Vertices(:,1),...
+                h_rec.Vertices(:,2), sz(1), sz(2)); 
+            %Add ROIMoved listerner to monitor movement
+            addlistener(h_rec,'ROIMoved',@(src,evt)UpdateRecPos(src,evt,handles));
+            %Save the current rectangular roi 
+            handles.Save_cropped.UserData.h_rec = h_rec;
+    end
+    
+    %Show progress
+    handles.Text_load.String = 'Defined';
 
-%Crop nan and 0 elements
-[dim1_lower,dim1_upper,dim2_lower,dim2_upper] = ...
-    getROIBoundsFromImage(A_dFoF_cropped(:,:,1)); 
-A_dFoF_cropped = ...
-    A_dFoF_cropped(dim1_lower:dim1_upper,dim2_lower:dim2_upper,:); 
-A_dFoF_cropped(A_dFoF_cropped == 0) = nan;
+    %Apply roi mask  
+    BW_3D = repmat(BW, [1,1,sz(3)]);
+    A_dFoF_cropped = curMovie.*BW_3D;
 
-%Save cropped matrix
-handles.Crop_movie.UserData.mask = BW;
-handles.Save_cropped.UserData.A_dFoF_cropped = A_dFoF_cropped;
+    %Crop nan and 0 elements
+    [dim1_lower,dim1_upper,dim2_lower,dim2_upper] = ...
+        getROIBoundsFromImage(A_dFoF_cropped(:,:,1)); 
+    A_dFoF_cropped = ...
+        A_dFoF_cropped(dim1_lower:dim1_upper,dim2_lower:dim2_upper,:); 
+    A_dFoF_cropped(A_dFoF_cropped == 0) = nan;
 
-    function [nZ_1_lower,nZ_1_upper,nZ_2_lower,nZ_2_upper] = getROIBoundsFromImage(cur_img)
-    %    This function identify the coordinates of vertex of the minimum
-    %    rectangle containing the roi
-    %
-    %    Inputs:
-    %        cur_img          A 2D image containg roi
-    %
-    %    Outputs:
-    %        nZ_1_lower      lower left vertex of the minimum rectangle
-    %        nZ_1_upper      upper left vertex of the minimum rectangle
-    %        nZ_2_lower      lower right vertex of the minimum rectangle
-    %        nZ_2_upper      upper right vertex of the minimum rectangle
+    %Save cropped matrix
+    handles.Save_cropped.UserData.mask = BW;
+    handles.Save_cropped.UserData.A_dFoF_cropped = A_dFoF_cropped;
+    handles.Save_cropped.UserData.h_rec = h_rec;
+    
 
-        if (~any(isnan(cur_img(:)))) && (cur_img(1) == 0) && (cur_img(end) == 0)
-            cur_img = ~(cur_img == 0);
-        else
-            cur_img = ~isnan(cur_img);
-        end
+function UpdateRecPos(h_rec,~,handles)
+%Callback function to update rectangular roi after interactive adjustment
+    
+    %Get current movie
+    curMovie = handles.output.UserData.curMovie;
+    curMovie(isnan(curMovie)) = 0;
+    sz = size(curMovie);
+    BW = poly2mask(h_rec.Vertices(:,1),...
+                h_rec.Vertices(:,2), sz(1), sz(2)); 
+            
+    %Apply roi mask  
+    BW_3D = repmat(BW, [1,1,sz(3)]);
+    A_dFoF_cropped = curMovie.*BW_3D;
 
-        nZ_2 = find(mean(cur_img,1));
-        nZ_2_upper = max(nZ_2);
-        nZ_2_lower = min(nZ_2);
-        nZ_1 = find(mean(cur_img,2));
-        nZ_1_upper = max(nZ_1);
-        nZ_1_lower = min(nZ_1);
+    %Crop nan and 0 elements
+    [dim1_lower,dim1_upper,dim2_lower,dim2_upper] = ...
+        getROIBoundsFromImage(A_dFoF_cropped(:,:,1)); 
+    A_dFoF_cropped = ...
+        A_dFoF_cropped(dim1_lower:dim1_upper,dim2_lower:dim2_upper,:); 
+    A_dFoF_cropped(A_dFoF_cropped == 0) = nan;
+
+    %Save cropped matrix/ mask/ rectangular roi object
+    handles.Save_cropped.UserData.mask = BW;
+    handles.Save_cropped.UserData.A_dFoF_cropped = A_dFoF_cropped;
+    handles.Save_cropped.UserData.h_rec = h_rec;
+    
+    
+   
+% --- Executes on button press in Rotate_rectangle.
+function Rotate_rectangle_Callback(hObject, eventdata, handles)
+% hObject    handle to Rotate_rectangle (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+try
+    %Show progress
+    handles.Text_playing.Visible = 'On';
+    handles.Text_playing.String = 'Rotating rectangular roi!';
+    
+    %Get the current rectangular roi and cropped movie
+    h_rec = handles.Save_cropped.UserData.h_rec;
+    A_dFoF_cropped = handles.Save_cropped.UserData.A_dFoF_cropped;
+    
+    %Rotate the image volume around the z axis
+    A_dFoF_cropped(isnan(A_dFoF_cropped)) = 0;%Change or NaN to 0 for rotation
+    Rec_rotated = imrotate3(A_dFoF_cropped, -h_rec.RotationAngle, [0,0,1]);
+    Rec_rotated(Rec_rotated == 0) = nan;
+    Rec_rotated = focusOnroi(Rec_rotated);
+    
+    %Store the rotated rectangular movie
+    hObject.UserData.Rec_rotated = Rec_rotated;
+    
+    %Average the rotated rectangular movie for line scanning
+    Avg_line = nanmean(Rec_rotated,1);
+    Avg_line = reshape(Avg_line, [size(Avg_line,2),size(Avg_line,3)]);
+    Avg_line = Avg_line';
+    
+    %Store the averaged line movie
+    hObject.UserData.Avg_line = Avg_line;
+    
+    %Save the rotated matrix and averaged line movie
+    filename = handles.Load_movie.UserData.filename;
+    uisave({'Rec_rotated', 'Avg_line', 'h_rec', 'filename'}, [filename(1:end-4) '_Rotated_rec.mat']);
+    handles.Text_playing.Visible = 'Off';
+    
+catch
+    msgbox('Please define a rectangular roi first!', 'Error!')
+end
+    
+
+function A = focusOnroi(A)
+%Chop the matirx to the roi part
+%Inputs/Outputs:
+%A     3D Matrix
+
+    [dim1_lower,dim1_upper,dim2_lower,dim2_upper] = getROIBoundsFromImage(A(:,:,1)); 
+    A = A(dim1_lower:dim1_upper,dim2_lower:dim2_upper,:); %ppA: pre-processed 
+    
+    
+
+function [nZ_1_lower,nZ_1_upper,nZ_2_lower,nZ_2_upper] = getROIBoundsFromImage(cur_img)
+%    This function identify the coordinates of vertex of the minimum
+%    rectangle containing the roi
+%
+%    Inputs:
+%        cur_img          A 2D image containg roi
+%
+%    Outputs:
+%        nZ_1_lower      lower left vertex of the minimum rectangle
+%        nZ_1_upper      upper left vertex of the minimum rectangle
+%        nZ_2_lower      lower right vertex of the minimum rectangle
+%        nZ_2_upper      upper right vertex of the minimum rectangle
+
+    if (~any(isnan(cur_img(:)))) && (cur_img(1) == 0) && (cur_img(end) == 0)
+        cur_img = ~(cur_img == 0);
+    else
+        cur_img = ~isnan(cur_img);
+    end
+
+    nZ_2 = find(mean(cur_img,1));
+    nZ_2_upper = max(nZ_2);
+    nZ_2_lower = min(nZ_2);
+    nZ_1 = find(mean(cur_img,2));
+    nZ_1_upper = max(nZ_1);
+    nZ_1_lower = min(nZ_1);
         
 
 
@@ -1087,12 +1203,11 @@ function Save_cropped_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 %Get cropped matrix
-A_dFoF_cropped = handles.Save_cropped.UserData.A_dFoF_cropped;
-BW = handles.Crop_movie.UserData.mask;
+Cropped_strct = handles.Save_cropped.UserData;
 
 %Save cropped matrix
 filename = handles.Load_movie.UserData.filename;
-uisave({'BW','A_dFoF_cropped'}, [filename(1:end-4) '_cropped.mat']);
+uisave({'Cropped_strct'}, [filename(1:end-4) '_cropped.mat']);
 
 %Show progress
 set(handles.Text_load, 'String', 'Saved!')
@@ -1110,6 +1225,7 @@ handles.Text_playing.String = 'Select a pixel!';
 %Define roi
 set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
 roi = drawpoint('Color', 'm');
+incorporateCurrentRoi(handles,roi);
 %Listening to the moving events
 addlistener(roi, 'ROIMoved', @(src,evt)updatePlotting(src,evt,handles));
 handles.Text_playing.String = 'Pixel selected!';
@@ -1121,8 +1237,43 @@ curPos = round(roi.Position);
 showTrace(curPos,handles)
 
 
+    
+% --- Executes on button press in Probe_region.
+function Probe_region_Callback(hObject, eventdata, handles)
+% hObject    handle to Probe_region (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Define roi
+handles.Text_playing.Visible = 'On';
+handles.Text_playing.String = 'Define a region!';
+set(handles.Manuvent_corr,'CurrentAxes',handles.axes1)
+BW = roipoly;
+handles.Text_playing.Visible = 'Off';
+
+%Show current trace
+showTrace(BW,handles)
+
+
+% --- Executes on button press in Save_region.
+function Save_region_Callback(hObject, eventdata, handles)
+% hObject    handle to Save_region (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+regional_stat = handles.Regional_stat.UserData.regional_stat;
+filename = handles.Load_movie.UserData.filename;
+uisave({'regional_stat'}, [filename(1:end-4) '_regional_stat.mat']);
+saveas(handles.Regional_trace,[filename(1:end-4) '_regional_trace.png'])
+
+
+
+
 
 function showTrace(curRegion,handles)
+%Show the fluorescent trace of a give region
+%curRegion     either a single pixel or a black-n-white roi region
+%handles       handles of the current GUI
+    
     %Get current movie
     curMovie = handles.output.UserData.curMovie;
     
@@ -1131,44 +1282,45 @@ function showTrace(curRegion,handles)
         curTrace = curMovie(curRegion(2),curRegion(1),:);
         curTrace = curTrace(:);
         %Show current position
-        handles.Text_playing.String = [num2str(curRegion(2)) ' ' num2str(curRegion(1))];
+        handles.Text_playing.String = [num2str(curRegion(1)) ' ' num2str(curRegion(2))];
         %Save current Position
-        handles.Probe_one.UserData.regional_stat.curPos = curRegion;
+        handles.Regional_stat.UserData.regional_stat.curPos = curRegion;
     else
+        %Define curTrace as the mean trace of the defined region
+        masked_movie = curMovie.*curRegion;
+        masked_movie(masked_movie == 0) = nan;
+        curTrace = nanmean(masked_movie,1);
+        curTrace = nanmean(curTrace,2);
+        curTrace = curTrace(:);
+        %Save current Position
+        handles.Regional_stat.UserData.regional_stat.BW = curRegion;
     end
-
+    
     %Show the current Trace
-    plot(handles.Regional_trace, curTrace, 'LineWidth', 2);       
-    %Save the trace and position
-    handles.Probe_one.UserData.regional_stat.curTrace = curTrace;
+    %hold(handles.Regional_trace, 'on')
+    plot(handles.Regional_trace, curTrace, 'LineWidth', 2);   
+    %Save the trace
+    handles.Regional_stat.UserData.regional_stat.curTrace = curTrace;
 
 
 
 function updatePlotting(roi,~,handles)
 %Update Plotting based on current position
     curPos = round(roi.Position);  %Update current xy coordinates
+    handles.Regional_stat.UserData.regional_stat.curPos = curPos;
     %Show the trace at this pixel
     showTrace(curPos,handles)
 
-% --- Executes on button press in Probe_region.
-function Probe_region_Callback(hObject, eventdata, handles)
-% hObject    handle to Probe_region (see GCBO)
+    
+% --- Executes on button press in Clean_trace.
+function Clean_trace_Callback(hObject, eventdata, handles)
+% hObject    handle to Clean_trace (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+    %hold(handles.Regional_trace, 'off')
+    %If curTrace is not define, clean the axes
+    cla(handles.Regional_comparison)
 
-
-% --- Executes on button press in Save_region.
-function Save_region_Callback(hObject, eventdata, handles)
-% hObject    handle to Save_region (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in Region_prop.
-function Region_prop_Callback(hObject, eventdata, handles)
-% hObject    handle to Region_prop (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 
 % --- Executes on button press in Dim_reduction.
@@ -1176,3 +1328,48 @@ function Dim_reduction_Callback(hObject, eventdata, handles)
 % hObject    handle to Dim_reduction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+
+
+% --- Executes on button press in Deposit_trace.
+function Deposit_trace_Callback(hObject, eventdata, handles)
+% hObject    handle to Deposit_trace (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Get the current trace
+try
+    curTrace = handles.Regional_stat.UserData.regional_stat.curTrace;
+    plot(handles.Regional_comparison, curTrace, 'LineWidth', 1);
+    hold(handles.Regional_comparison, 'on')
+catch
+    msgbox('Please define a roi first!','Error!')
+end
+
+
+% --- Executes on button press in Rectangular_crop.
+function Rectangular_crop_Callback(hObject, eventdata, handles)
+% hObject    handle to Rectangular_crop (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+crop_movie(2, handles);
+
+
+    
+
+% --- Executes on button press in Line_scan.
+function Line_scan_Callback(hObject, eventdata, handles)
+% hObject    handle to Line_scan (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+try
+    LineScanObj.Avg_line = handles.Rotate_rectangle.UserData.Avg_line;
+    LineScanObj.Rec_rotated = handles.Rotate_rectangle.UserData.Rec_rotated;
+    LineScanObj.filename = handles.Load_movie.UserData.filename;
+    LineScanObj.h_rec = handles.Save_cropped.UserData.h_rec;
+    hObject.UserData.LineScanObj = LineScanObj;
+    LineMapScan('hObject');
+catch
+    msgbox('Please rotate the rectangular roi first!', 'Error!')
+end
