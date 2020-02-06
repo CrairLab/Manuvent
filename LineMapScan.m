@@ -22,7 +22,7 @@ function varargout = LineMapScan(varargin)
 
 % Edit the above text to modify the response to help LineMapScan
 
-% Last Modified by GUIDE v2.5 04-Feb-2020 19:27:04
+% Last Modified by GUIDE v2.5 05-Feb-2020 23:49:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -70,6 +70,12 @@ if ~isempty(findobj('Tag', 'Manuvent_corr'))
     handles.Load_line.UserData.Rec_rotated = LineScanObj.Rec_rotated;
     handles.Load_line.UserData.h_rec = LineScanObj.h_rec;
     handles.Load_line.UserData.filename = LineScanObj.filename;
+    try
+        handles.Load_line.UserData.Avg_noise = LineScanObj.Avg_noise;
+        disp('Detected background noise signal!')
+    catch
+        warning('Did not specify background noise!');
+    end
     
     clear MC_data MC_passed;
 
@@ -204,7 +210,7 @@ function Use_default_Callback(hObject, eventdata, handles)
 handles.Progress_report.String = 'Use default parameters!';
 
 %Set/Display default parameters
-handles.Smooth_spatial.String = '5';
+handles.Smooth_spatial.String = '3';
 handles.Smooth_temporal.String = '5';
 handles.Threshold.String = '0.02';
 handles.Smooth_checkbox.Value = 1;
@@ -231,6 +237,34 @@ Avg_line = handles.Load_line.UserData.Avg_line;
 tic; 
 [co_peaks, Avg_line_smoothed, w_spatial, w_temporal] = findCoPeaks(Avg_line, param); 
 toc;
+
+%Do further rejection if background noise has been specified
+try
+    Avg_noise = handles.Load_line.UserData.Avg_noise;
+    Region_avg = nanmean(Avg_line,2);
+    Save_vec = Avg_noise < Region_avg;
+    Save_matrix = repmat(Save_vec, [1, size(Avg_line,2)]);
+    co_peaks = co_peaks.* Save_matrix;
+    
+    %Get spatial and temporal widths
+    w_spatial = w_spatial.* co_peaks; 
+    w_spatial(w_spatial == 0) = nan; w_spatial = w_spatial(~isnan(w_spatial));
+    w_temporal = w_temporal.* co_peaks; 
+    w_temporal(w_temporal == 0) = nan; w_temporal = w_temporal(~isnan(w_temporal));
+    disp('Process with rejecting background spillover!')
+catch
+    %Get spatial and temporal widths 
+    w_spatial = w_spatial.* co_peaks; 
+    w_spatial(w_spatial == 0) = nan; w_spatial = w_spatial(~isnan(w_spatial));
+    w_temporal = w_temporal.* co_peaks; 
+    w_temporal(w_temporal == 0) = nan; w_temporal = w_temporal(~isnan(w_temporal));
+    disp('Process without rejecting background spillover!')
+end
+
+%Save useful information
+hObject.UserData.co_peaks = co_peaks;
+hObject.UserData.w_spatial = w_spatial;
+hObject.UserData.w_temporal = w_temporal;
 
 %Show smoothed 2D line map
 showLine2D(handles, Avg_line_smoothed)
@@ -283,7 +317,7 @@ function [co_peaks, Avg_line_smoothed, w1, w2] = findCoPeaks(Avg_line, param)
     %Spatial line scan frame by frame
     peak_l1 = zeros(size(Avg_line)); %Binary matrix for peaks identified spatially
     w1 = nan(size(Avg_line)); %Matrix to record all the widths (spatial)
-    MinPeakDistance = round(size(Avg_line,2)/5); %Adjust it with the width of IC
+    MinPeakDistance = round(size(Avg_line,2)/15); %Adjust it with the width of IC
     for i = 1:size(Avg_line,1)
         cur_trace = Avg_line_smoothed(i,:);
         cur_trace_smoothed = smooth(cur_trace, spatial_span);
@@ -300,9 +334,7 @@ function [co_peaks, Avg_line_smoothed, w1, w2] = findCoPeaks(Avg_line, param)
     %Events should be postive in all three conditions
     co_peaks = peak_l1 .* peak_l2 .* Active_pixels;
     
-    %Get spatial and temporal widths
-    w1 = w1.* co_peaks; w1(w1 == 0) = nan; w1 = w1(~isnan(w1));
-    w2 = w2.* co_peaks; w2(w2 == 0) = nan; w2 = w2(~isnan(w2));
+    
 
 
 
@@ -320,6 +352,12 @@ try
     handles.Load_line.UserData.Rec_rotated = Rec_rotated;
     handles.Load_line.UserData.h_rec = h_rec;
     handles.Load_line.UserData.filename = filename;
+    try
+        handles.Load_line.UserData.Avg_noise = Avg_noise;
+        disp('Detected background noise signal!')
+    catch
+        warning('Did not specify background noise!');
+    end
     
     %Show the line map
     showLine2D(handles, Avg_line)
@@ -332,3 +370,71 @@ catch
 end
     
 
+
+% --- Executes on button press in Do_dimReduction.
+function Do_dimReduction_Callback(hObject, eventdata, handles)
+% hObject    handle to Do_dimReduction (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+GUI_dimReduction();
+
+
+% --- Executes on button press in Label_movie.
+function Label_movie_Callback(hObject, eventdata, handles)
+% hObject    handle to Label_movie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+%Construct each frame
+
+try
+    %Load related variables
+    Avg_line = handles.Load_line.UserData.Avg_line;
+    co_peaks = handles.Line_scan.UserData.co_peaks;
+    start_frame = 1; end_frame = size(Avg_line,1);
+
+    handles.Progress_report.String = 'Labeling locations...';%Update progres
+
+        parfor i = start_frame:end_frame
+            %Construct each frame
+            h = figure('visible','off');
+            cur_line = Avg_line(i,:);
+            cur_frame = repmat(cur_line,[11,1]); %Expand the line to a rectangle
+            imshow(mat2gray(cur_frame));
+            hold on
+            if i>start_frame+2 && i<end_frame-2
+                [~,x] = find(co_peaks(i-2:i+2,:));
+                plot(x,6.*ones(length(x),1),'ro','MarkerSize',1,'LineWidth',2) %Label the center
+            end
+            hold off
+            F(i) = getframe(h);
+            close(h)   
+            if mod(i,100) == 0
+                disp(num2str(i));
+            end
+        end
+
+        F = F(start_frame:end_frame);
+
+        %Create output labeled movie name
+        OutputName = ['Labeled_movie_' num2str(start_frame) '_' num2str(end_frame) '.avi'];
+
+        % create the video writer with 25 fps
+        writerObj = VideoWriter(OutputName);
+        writerObj.FrameRate = 25;
+        % set the seconds per image
+        % open the video writer
+        open(writerObj);
+        % write the frames to the video
+        for i=1:length(F)
+            % convert the image to a frame
+            frame = F(i);    
+            writeVideo(writerObj, frame);
+        end
+        % close the writer object
+        close(writerObj);
+    
+    handles.Progress_report.String = 'Movie labeled!';%Update progres
+catch
+    msgbox('Can not detect line movie/line scan result!', 'Error!')
+end
