@@ -22,7 +22,7 @@ function varargout = LineMapScan(varargin)
 
 % Edit the above text to modify the response to help LineMapScan
 
-% Last Modified by GUIDE v2.5 05-Feb-2020 23:49:34
+% Last Modified by GUIDE v2.5 07-Feb-2020 16:57:47
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,9 +58,9 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-%Get the plotCorrObj from the main GUI (Manuvent_corr)
-if ~isempty(findobj('Tag', 'Manuvent_corr'))
-    MC_h = findobj('Tag', 'Manuvent_corr');
+%Get the plotCorrObj from the main GUI (Manuvent_threshold)
+if ~isempty(findobj('Tag', 'Manuvent_threshold'))
+    MC_h = findobj('Tag', 'Manuvent_threshold');
     MC_data = guidata(MC_h);
     MC_passed = get(MC_data.Line_scan, 'UserData');
     LineScanObj = MC_passed.LineScanObj;
@@ -81,7 +81,8 @@ if ~isempty(findobj('Tag', 'Manuvent_corr'))
 
     %Show 2D line map
     Avg_line = LineScanObj.Avg_line;
-    showLine2D(handles, Avg_line)
+    set(handles.LineMapScan,'CurrentAxes',handles.Line_2D) %Specify current axis
+    showLine2D(handles.Line_2D, Avg_line)
     
     %Report progress
     handles.Progress_report.String = 'Loaded LineScanObj from the main GUI!';
@@ -90,16 +91,13 @@ end
 % uiwait(handles.LineMapScan);
 
 
-function showLine2D(handles, Avg_line)
+function showLine2D(h, Avg_line)
 %Show 2D line map at the Line_2D axes
-
-    %Specify current axis
-    set(handles.LineMapScan,'CurrentAxes',handles.Line_2D)
-    %Show 2D line map
-    imagesc(handles.Line_2D, Avg_line'); colormap jet;
-    colorbar(handles.Line_2D); 
-    axis(handles.Line_2D, 'image');
-    caxis(handles.Line_2D,[0, 0.3]);
+    imagesc(h, Avg_line'); colormap jet;
+    colorbar(h); 
+    axis(h, 'image');
+    caxis(h,[0, prctile(Avg_line(:),95)]);
+    daspect(h,[10,1,1])
 
 
 
@@ -210,7 +208,7 @@ function Use_default_Callback(hObject, eventdata, handles)
 handles.Progress_report.String = 'Use default parameters!';
 
 %Set/Display default parameters
-handles.Smooth_spatial.String = '3';
+handles.Smooth_spatial.String = '5';
 handles.Smooth_temporal.String = '5';
 handles.Threshold.String = '0.02';
 handles.Smooth_checkbox.Value = 1;
@@ -227,16 +225,21 @@ function Line_scan_Callback(hObject, eventdata, handles)
 %Show progress
 handles.Progress_report.String  = 'Line scanning...';
 
-%Get current parameters
-param.spatial_span = str2double(handles.Smooth_spatial.String);
-param.temporal_span = str2double(handles.Smooth_temporal.String);
-param.threshold = str2double(handles.Threshold.String);
+try
+    %Get current parameters
+    param.spatial_span = str2double(handles.Smooth_spatial.String);
+    param.temporal_span = str2double(handles.Smooth_temporal.String);
+    param.threshold = str2double(handles.Threshold.String);
 
-%Find coincident peaks (events)
-Avg_line = handles.Load_line.UserData.Avg_line;
-tic; 
-[co_peaks, Avg_line_smoothed, w_spatial, w_temporal] = findCoPeaks(Avg_line, param); 
-toc;
+    %Find coincident peaks (events)
+    Avg_line = handles.Load_line.UserData.Avg_line;
+    tic; 
+    [co_peaks, Avg_line_smoothed, w_spatial, w_temporal] = findCoPeaks(Avg_line, param); 
+    toc;
+catch
+    msgbox('Please specify parameters first!', 'Error!')
+    return
+end
 
 %Do further rejection if background noise has been specified
 try
@@ -267,15 +270,18 @@ hObject.UserData.w_spatial = w_spatial;
 hObject.UserData.w_temporal = w_temporal;
 
 %Show smoothed 2D line map
-showLine2D(handles, Avg_line_smoothed)
+set(handles.LineMapScan,'CurrentAxes',handles.Line_2D) %Specify current axis
+showLine2D(handles.Line_2D, Avg_line_smoothed)
 
 %Superimpose events
+figure(); h = gca; 
 [x, y] = find(co_peaks);
-hold(handles.Line_2D, 'on')
-plot(handles.Line_2D, x, y, 'wo','LineWidth',2);
-handles.Line_2D.XLim = [0, 1000];
+showLine2D(h, Avg_line_smoothed)
+hold(h, 'on')
+plot(h, x, y, 'wo','LineWidth',2);
+daspect(h,[10,1,1])
 handles.Progress_report.String = 'Events + smoothed line map';
-hold(handles.Line_2D, 'off')
+hold(h, 'off')
 
 handles.Progress_report.String  = 'Scan completed!';
 
@@ -318,6 +324,8 @@ function [co_peaks, Avg_line_smoothed, w1, w2] = findCoPeaks(Avg_line, param)
     peak_l1 = zeros(size(Avg_line)); %Binary matrix for peaks identified spatially
     w1 = nan(size(Avg_line)); %Matrix to record all the widths (spatial)
     MinPeakDistance = round(size(Avg_line,2)/15); %Adjust it with the width of IC
+    % https://www.jneurosci.org/content/28/18/4767 Threr should be ~ 12
+    % steps in the IC, use IC width/15 here as a lower limit
     for i = 1:size(Avg_line,1)
         cur_trace = Avg_line_smoothed(i,:);
         cur_trace_smoothed = smooth(cur_trace, spatial_span);
@@ -360,7 +368,8 @@ try
     end
     
     %Show the line map
-    showLine2D(handles, Avg_line)
+    set(handles.LineMapScan,'CurrentAxes',handles.Line_2D) %Specify current axis
+    showLine2D(handles.Line_2D, Avg_line)
     
     %Report progress
     handles.Progress_report.String = 'File loaded!';
@@ -376,7 +385,7 @@ function Do_dimReduction_Callback(hObject, eventdata, handles)
 % hObject    handle to Do_dimReduction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+hanlde.Show_status.String = 'Transferring to GUI_dimReduction!';
 GUI_dimReduction();
 
 
@@ -404,7 +413,7 @@ try
             hold on
             if i>start_frame+2 && i<end_frame-2
                 [~,x] = find(co_peaks(i-2:i+2,:));
-                plot(x,6.*ones(length(x),1),'ro','MarkerSize',1,'LineWidth',2) %Label the center
+                plot(x,6.*ones(length(x),1),'ro','MarkerSize',2,'LineWidth',3) %Label the center
             end
             hold off
             F(i) = getframe(h);
@@ -438,3 +447,106 @@ try
 catch
     msgbox('Can not detect line movie/line scan result!', 'Error!')
 end
+
+
+% --- Executes on button press in Save_results.
+function Save_results_Callback(hObject, eventdata, handles)
+% hObject    handle to Save_results (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+try
+    LineScanStat = LineScanStatistics(handles);
+    handles.Save_results.UserData.LinScanStat = LineScanStat;
+    filename = handles.Load_line.UserData.filename;
+    uisave({'LineScanStat'}, [filename(1:end-4) '_LinScanStat.mat']);
+    handles.Progress_report.String = 'Scan statistics saved!';
+catch
+    msgbox('Please do line scanning first!', 'Warning!')
+end
+
+function LinScanStat = LineScanStatistics(handles)
+
+    %Get relevent variables
+    Avg_line = handles.Load_line.UserData.Avg_line;
+    co_peaks = handles.Line_scan.UserData.co_peaks;
+    w_spatial = handles.Line_scan.UserData.w_spatial;
+    w_temporal = handles.Line_scan.UserData.w_temporal;
+    
+    movie_length = size(Avg_line,1);
+    %Get IC width
+    hemisphere_width = size(Avg_line,2);
+    
+    %Calculate events per minute
+    Evt_perMin = sum(co_peaks(:))./movie_length*60*10;
+    
+    %Peaks distribution
+    Peaks_byPixel = sum(co_peaks,1);
+    bin_sz = hemisphere_width/16;
+    Boarders = round(1:bin_sz:hemisphere_width);
+    for i = 1:length(Boarders)-1
+        Left_idx = Boarders(i);
+        Right_idx = Boarders(i+1)-1;
+        if i == length(Boarders)-1
+            Right_idx = Right_idx + 1;
+        end
+        curBin_peaks = sum(Peaks_byPixel(Left_idx:Right_idx));
+        Peaks_byBin(i) = curBin_peaks;  
+    end
+    
+    %Amplitude and its CV
+    All_amp = Avg_line(logical(co_peaks));
+    Amp_mean = mean(All_amp);
+    Amp_std = std(All_amp);
+    Amp_CV = Amp_std./Amp_mean;
+    
+    %Spatial width and its CV
+    BandWidth_mean = mean(w_spatial);
+    BandWidth_std = std(w_spatial);
+    BandWidth_CV = BandWidth_mean./BandWidth_std;
+    
+    %Temporal duration and its CV
+    Duration_mean = mean(w_temporal);
+    Duration_std = std(w_temporal);
+    Duration_CV = Duration_mean./Duration_std;
+    
+    %Construct line scan struct
+    LinScanStat.Avg_line = Avg_line;
+    LinScanStat.co_peaks = co_peaks;
+    LinScanStat.w_spatial = w_spatial;
+    LinScanStat.w_temporal = w_temporal;
+    LinScanStat.hemisphere_width = hemisphere_width;
+    LinScanStat.Evt_perMin = Evt_perMin;
+    LinScanStat.Peaks_byPixel = Peaks_byPixel;
+    LinScanStat.Peaks_byBin = Peaks_byBin;
+    LinScanStat.Amp_mean = Amp_mean;
+    LinScanStat.Amp_std = Amp_std;
+    LinScanStat.Amp_CV = Amp_CV;
+    LinScanStat.BandWidth_mean = BandWidth_mean; 
+    LinScanStat.BandWidth_std = BandWidth_std; 
+    LinScanStat.BandWidth_CV = BandWidth_CV;
+    LinScanStat.Duration_mean= Duration_mean;
+    LinScanStat.Duration_std = Duration_std;
+    LinScanStat.Duration_CV = Duration_CV;
+    
+
+% --- Executes on key press with focus on Smooth_temporal and none of its controls.
+function Smooth_temporal_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to Smooth_temporal (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+
+
+% --- Executes on key press with focus on Smooth_temporal and none of its controls.
+function Smooth_spatial_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to Smooth_temporal (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)

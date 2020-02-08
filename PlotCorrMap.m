@@ -59,7 +59,7 @@ handles.output = hObject;
 guidata(hObject, handles);
 
 %Get the plotCorrObj from the main GUI (Manuvent_corr)
-MC_h = findobj('Tag', 'Manuvent_corr');
+MC_h = findobj('Tag', 'Manuvent_threshold');
 MC_data = guidata(MC_h);
 MC_passed = get(MC_data.Plot_correlation, 'UserData');
 plotCorrObj = MC_passed.plotCorrObj;
@@ -465,6 +465,7 @@ try
     
     %Plot the trace
     plot(handles.Trace, Avg_trace, 'LineWidth', 2);
+    handles.Trace.XLim = [1, length(Avg_trace)];
     max_time = find(Avg_trace == max(Avg_trace));
     hold(handles.Trace, 'on');
     plot(handles.Trace, max_time, max(Avg_trace), 'r*')

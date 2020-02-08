@@ -1,15 +1,15 @@
 function varargout = Manuvent_threshold(varargin)
-% MANUVENT_CORR MATLAB code for Manuvent_corr.fig
-%      MANUVENT_CORR, by itself, creates a new MANUVENT_CORR or raises the existing
+% MANUVENT_THRESHOLD MATLAB code for Manuvent_threshold.fig
+%      MANUVENT_THRESHOLD, by itself, creates a new MANUVENT_THRESHOLD or raises the existing
 %      singleton*.
 %
-%      H = MANUVENT_CORR returns the handle to a new MANUVENT_CORR or the handle to
+%      H = MANUVENT_THRESHOLD returns the handle to a new MANUVENT_THRESHOLD or the handle to
 %      the existing singleton*.
 %
-%      MANUVENT_CORR('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in MANUVENT_CORR.M with the given input arguments.
+%      MANUVENT_THRESHOLD('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in MANUVENT_THRESHOLD.M with the given input arguments.
 %
-%      MANUVENT_CORR('Property','Value',...) creates a new MANUVENT_CORR or raises the
+%      MANUVENT_THRESHOLD('Property','Value',...) creates a new MANUVENT_THRESHOLD or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
 %      applied to the GUI before Manuvent_threshold_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
@@ -20,9 +20,9 @@ function varargout = Manuvent_threshold(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help Manuvent_corr
+% Edit the above text to modify the response to help Manuvent_threshold
 
-% Last Modified by GUIDE v2.5 05-Feb-2020 11:18:31
+% Last Modified by GUIDE v2.5 07-Feb-2020 16:39:04
 
 % Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
@@ -46,22 +46,22 @@ end
 
 % End initialization code - DO NOT EDIT
 
-% --- Executes just before Manuvent_corr is made visible.
+% --- Executes just before Manuvent_threshold is made visible.
 function Manuvent_threshold_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to Manuvent_corr (see VARARGIN)
+% varargin   command line arguments to Manuvent_threshold (see VARARGIN)
 
-% Choose default command line output for Manuvent_corr
+% Choose default command line output for Manuvent_threshold
 handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes Manuvent_corr wait for user response (see UIRESUME)
-% uiwait(handles.Manuvent_corr);
+% UIWAIT makes Manuvent_threshold wait for user response (see UIRESUME)
+% uiwait(handles.Manuvent_threshold);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -102,6 +102,10 @@ handles.listbox.String = {};
 handles.listbox.UserData.allROI = {};
 handles.listbox.UserData.allROI_info = [];
 handles.listbox.Value = 1;
+handles.Background_noise.UserData = [];
+handles.Line_scan.UserData = [];
+handles.Rotate_rectangle.UserData = [];
+handles.Save_cropped.UserData = [];
 
 %Show loading progress
 set(handles.Text_load, 'Visible', 'On')
@@ -442,7 +446,7 @@ function incorporateCurrentRoi(handles,roi)
 % and update related data structure
 % handles    handles of current GUI
 % roi        current roi object
-
+  
     allROI = handles.listbox.UserData.allROI;%Get all ROIs
     allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
     curList = handles.listbox.String; %Get display string from listbox
@@ -451,6 +455,7 @@ function incorporateCurrentRoi(handles,roi)
     curPos = round(roi.Position);  %Current xy coordinates
     curStr = [num2str(curIdx) ' ' num2str(curPos(1)) ' ' num2str(curPos(2))]; %New string to be listed in listbox
     curList{end+1} = curStr; %Add new string to string cell array
+    set(handles.listbox,'Value',1);
     handles.listbox.String = curList; %Renew listbox (display new string)
     roi.UserData.Str = curStr; %Attach string information to the new roi
     roi.UserData.Idx = curIdx; %Attach index information to the new roi
@@ -903,6 +908,10 @@ function Plot_correlation_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if ~isempty(handles.Plot_correlation.UserData)
+    %Show progress
+    handles.Text_playing.Visible = 'On';
+    handles.Text_playing.String = 'Calculating correlation!';
+    
     %Construct plotCorrObj to transfer data to PlotCorrMap GUI
     curRoi = handles.Plot_correlation.UserData.curROI;
     plotCorrObj.curPos = round(curRoi.Position);
@@ -1000,7 +1009,7 @@ Mean_response = nanmean(curMovie(:,:,11:15),3);
 [y2 ,x2] = findReccomandMax(Mean_response);
 
 %Create a new roi object 
-set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1)
+set(handles.Manuvent_threshold,'CurrentAxes',handles.Movie_axes1)
 hold on;
 roi = drawpoint(handles.Movie_axes1,'Position',[x2 y2]);
 %Incorporate the new roi to related data structure
@@ -1054,7 +1063,7 @@ function crop_movie(m, handles)
     
     %Define roi
     handles.Text_load.String = 'Drawing';
-    set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1);
+    set(handles.Manuvent_threshold,'CurrentAxes',handles.Movie_axes1);
     
     %Different ways to define rois
     switch m
@@ -1105,6 +1114,11 @@ function crop_movie(m, handles)
 function UpdateRecPos(h_rec,~,handles)
 %Callback function to update rectangular roi after interactive adjustment
     
+    %Show status
+    handles.Text_playing.Visible = 'On';
+    handles.Text_playing.String = [num2str(h_rec.Vertices(1)) ' ' ...
+        num2str(h_rec.Vertices(3))];
+    
     %Get current movie
     curMovie = handles.output.UserData.curMovie;
     curMovie(isnan(curMovie)) = 0;
@@ -1153,9 +1167,14 @@ try
     %Store the rotated rectangular movie
     hObject.UserData.Rec_rotated = Rec_rotated;
     
+    %Preserve columns with >50% none-nan pixels
+    R1 = sum(~isnan(Rec_rotated(:,:,1)),1);
+    Preserved_idx = R1 > round(size(Rec_rotated,1)/2);
+    
     %Average the rotated rectangular movie for line scanning
     Avg_line = nanmean(Rec_rotated,1);
     Avg_line = reshape(Avg_line, [size(Avg_line,2),size(Avg_line,3)]);
+    Avg_line = Avg_line(Preserved_idx',:);
     Avg_line = Avg_line';
     
     %Store the averaged line movie
@@ -1244,7 +1263,7 @@ handles.Text_playing.Visible = 'On';
 handles.Text_playing.String = 'Select a pixel!';
 
 %Define roi
-set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1)
+set(handles.Manuvent_threshold,'CurrentAxes',handles.Movie_axes1)
 roi = drawpoint('Color', 'm');
 incorporateCurrentRoi(handles,roi);
 %Listening to the moving events
@@ -1268,7 +1287,7 @@ function Probe_region_Callback(hObject, eventdata, handles)
 %Define roi
 handles.Text_playing.Visible = 'On';
 handles.Text_playing.String = 'Define a region!';
-set(handles.Manuvent_corr,'CurrentAxes',handles.Movie_axes1)
+set(handles.Manuvent_threshold,'CurrentAxes',handles.Movie_axes1)
 BW = roipoly;
 handles.Text_playing.Visible = 'Off';
 
@@ -1319,7 +1338,8 @@ function showTrace(curRegion,handles)
     
     %Show the current Trace
     %hold(handles.Regional_trace, 'on')
-    plot(handles.Regional_trace, curTrace, 'LineWidth', 2);   
+    plot(handles.Regional_trace, curTrace, 'LineWidth', 2);
+    handles.Regional_trace.XLim = [1, length(curTrace)];
     %Save the trace
     handles.Regional_stat.UserData.regional_stat.curTrace = curTrace;
 
@@ -1369,6 +1389,7 @@ function Deposit_trace_Callback(hObject, eventdata, handles)
 try
     curTrace = handles.Regional_stat.UserData.regional_stat.curTrace;
     plot(handles.Regional_comparison, curTrace, 'LineWidth', 1);
+    handles.Regional_comparison.XLim = [1, length(curTrace)];
     hold(handles.Regional_comparison, 'on')
 catch
     msgbox('Please define a roi first!','Error!')
