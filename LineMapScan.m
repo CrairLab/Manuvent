@@ -246,8 +246,28 @@ try
     Avg_noise = handles.Load_line.UserData.Avg_noise;
     Region_avg = nanmean(Avg_line,2);
     Save_vec = Avg_noise < Region_avg;
+    
+    %Incoporate motion correction information if available
+    try
+        filename = handles.Load_line.UserData.filename;
+        checkname = [filename(1:end-12) 'moveAssess.mat'];
+        if ~isempty(dir(checkname))
+            load(checkname)
+            Save_vec = logical(Save_vec.*movIdx_saved);
+            disp('Incorporate motion correction information!')
+        end
+    catch
+        disp('Did not detect movement assessment file!')
+    end
+    
+    %Filter co_peaks using Save_vec
     Save_matrix = repmat(Save_vec, [1, size(Avg_line,2)]);
     co_peaks = co_peaks.* Save_matrix;
+    
+    %Store actual duration used for peaks detection
+    Act_duration = sum(Save_vec);
+    disp(['Actual frames used for peaks detection = ' num2str(Act_duration)])
+    hObject.UserData.Act_duration = Act_duration;
     
     %Get spatial and temporal widths
     w_spatial = w_spatial.* co_peaks; 
@@ -471,8 +491,12 @@ function LinScanStat = LineScanStatistics(handles)
     co_peaks = handles.Line_scan.UserData.co_peaks;
     w_spatial = handles.Line_scan.UserData.w_spatial;
     w_temporal = handles.Line_scan.UserData.w_temporal;
+    try 
+        movie_length = handles.Line_scan.UserData.Act_duration;
+    catch
+        movie_length = size(Avg_line,1);
+    end
     
-    movie_length = size(Avg_line,1);
     %Get IC width
     hemisphere_width = size(Avg_line,2);
     
