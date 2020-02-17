@@ -542,6 +542,7 @@ function LinScanStat = LineScanStatistics(handles)
     LinScanStat.Evt_perMin = Evt_perMin;
     LinScanStat.Peaks_byPixel = Peaks_byPixel;
     LinScanStat.Peaks_byBin = Peaks_byBin;
+    LinScanStat.All_amp = All_amp;
     LinScanStat.Amp_mean = Amp_mean;
     LinScanStat.Amp_std = Amp_std;
     LinScanStat.Amp_CV = Amp_CV;
