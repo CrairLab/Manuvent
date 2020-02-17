@@ -22,7 +22,7 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_threshold
 
-% Last Modified by GUIDE v2.5 07-Feb-2020 16:39:04
+% Last Modified by GUIDE v2.5 14-Feb-2020 21:58:02
 
 % Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
@@ -916,26 +916,26 @@ if ~isempty(handles.Plot_correlation.UserData)
     curRoi = handles.Plot_correlation.UserData.curROI;
     plotCorrObj.curPos = round(curRoi.Position);
     plotCorrObj.curMovie = handles.output.UserData.curMovie;
-    plotCorrObj.reg_flag = handles.regress_flag.Value;
+    plotCorrObj.reg_flag = handles.Regress_flag.Value;
     plotCorrObj.filename = handles.Load_movie.UserData.filename;
     handles.Plot_correlation.UserData.plotCorrObj = plotCorrObj;
     
     %Execute PlotCorrMap GUI
     disp('Generating the correlation map...')
-    PlotCorrMap('hObject');
+    PickSeedMap('hObject');
 else
     msgbox('Can not detect current roi object!', 'Error')
 end
 
 
 
-% --- Executes on button press in regress_flag.
-function regress_flag_Callback(hObject, eventdata, handles)
-% hObject    handle to regress_flag (see GCBO)
+% --- Executes on button press in Regress_flag.
+function Regress_flag_Callback(hObject, eventdata, handles)
+% hObject    handle to Regress_flag (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of regress_flag
+% Hint: get(hObject,'Value') returns toggle state of Regress_flag
 
 
 % --- Executes on button press in Next_movie.
