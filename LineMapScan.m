@@ -22,7 +22,7 @@ function varargout = LineMapScan(varargin)
 
 % Edit the above text to modify the response to help LineMapScan
 
-% Last Modified by GUIDE v2.5 07-Feb-2020 16:57:47
+% Last Modified by GUIDE v2.5 17-Feb-2020 14:55:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -66,12 +66,12 @@ if ~isempty(findobj('Tag', 'Manuvent_threshold'))
     LineScanObj = MC_passed.LineScanObj;
     
     %Store useful information
-    handles.Load_line.UserData.Avg_line = LineScanObj.Avg_line;
-    handles.Load_line.UserData.Rec_rotated = LineScanObj.Rec_rotated;
-    handles.Load_line.UserData.h_rec = LineScanObj.h_rec;
-    handles.Load_line.UserData.filename = LineScanObj.filename;
+    handles.Load_rectangle.UserData.Avg_line = LineScanObj.Avg_line;
+    handles.Load_rectangle.UserData.Rec_rotated = LineScanObj.Rec_rotated;
+    handles.Load_rectangle.UserData.h_rec = LineScanObj.h_rec;
+    handles.Load_rectangle.UserData.filename = LineScanObj.filename;
     try
-        handles.Load_line.UserData.Avg_noise = LineScanObj.Avg_noise;
+        handles.Load_rectangle.UserData.Avg_noise = LineScanObj.Avg_noise;
         disp('Detected background noise signal!')
     catch
         warning('Did not specify background noise!');
@@ -232,7 +232,7 @@ try
     param.threshold = str2double(handles.Threshold.String);
 
     %Find coincident peaks (events)
-    Avg_line = handles.Load_line.UserData.Avg_line;
+    Avg_line = handles.Load_rectangle.UserData.Avg_line;
     tic; 
     [co_peaks, Avg_line_smoothed, w_spatial, w_temporal] = findCoPeaks(Avg_line, param); 
     toc;
@@ -243,13 +243,13 @@ end
 
 %Do further rejection if background noise has been specified
 try
-    Avg_noise = handles.Load_line.UserData.Avg_noise;
+    Avg_noise = handles.Load_rectangle.UserData.Avg_noise;
     Region_avg = nanmean(Avg_line,2);
     Save_vec = Avg_noise < Region_avg;
     
     %Incoporate motion correction information if available
     try
-        filename = handles.Load_line.UserData.filename;
+        filename = handles.Load_rectangle.UserData.filename;
         checkname = [filename(1:end-12) 'moveAssess.mat'];
         if ~isempty(dir(checkname))
             load(checkname)
@@ -366,9 +366,9 @@ function [co_peaks, Avg_line_smoothed, w1, w2] = findCoPeaks(Avg_line, param)
 
 
 
-% --- Executes on button press in Load_line.
-function Load_line_Callback(hObject, eventdata, handles)
-% hObject    handle to Load_line (see GCBO)
+% --- Executes on button press in Load_rectangle.
+function Load_rectangle_Callback(hObject, eventdata, handles)
+% hObject    handle to Load_rectangle (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 try
@@ -376,12 +376,12 @@ try
     load(fullfile(path,filename));
     
     %Store useful information
-    handles.Load_line.UserData.Avg_line = Avg_line;
-    handles.Load_line.UserData.Rec_rotated = Rec_rotated;
-    handles.Load_line.UserData.h_rec = h_rec;
-    handles.Load_line.UserData.filename = filename;
+    handles.Load_rectangle.UserData.Avg_line = Avg_line;
+    handles.Load_rectangle.UserData.Rec_rotated = Rec_rotated;
+    handles.Load_rectangle.UserData.h_rec = h_rec;
+    handles.Load_rectangle.UserData.filename = filename;
     try
-        handles.Load_line.UserData.Avg_noise = Avg_noise;
+        handles.Load_rectangle.UserData.Avg_noise = Avg_noise;
         disp('Detected background noise signal!')
     catch
         warning('Did not specify background noise!');
@@ -418,7 +418,7 @@ function Label_movie_Callback(hObject, eventdata, handles)
 
 try
     %Load related variables
-    Avg_line = handles.Load_line.UserData.Avg_line;
+    Avg_line = handles.Load_rectangle.UserData.Avg_line;
     co_peaks = handles.Line_scan.UserData.co_peaks;
     start_frame = 1; end_frame = size(Avg_line,1);
 
@@ -477,7 +477,7 @@ function Save_results_Callback(hObject, eventdata, handles)
 try
     LineScanStat = LineScanStatistics(handles);
     handles.Save_results.UserData.LinScanStat = LineScanStat;
-    filename = handles.Load_line.UserData.filename;
+    filename = handles.Load_rectangle.UserData.filename;
     uisave({'LineScanStat'}, [filename(1:end-4) '_LinScanStat.mat']);
     handles.Progress_report.String = 'Scan statistics saved!';
 catch
@@ -487,7 +487,7 @@ end
 function LinScanStat = LineScanStatistics(handles)
 
     %Get relevent variables
-    Avg_line = handles.Load_line.UserData.Avg_line;
+    Avg_line = handles.Load_rectangle.UserData.Avg_line;
     co_peaks = handles.Line_scan.UserData.co_peaks;
     w_spatial = handles.Line_scan.UserData.w_spatial;
     w_temporal = handles.Line_scan.UserData.w_temporal;
@@ -521,7 +521,7 @@ function LinScanStat = LineScanStatistics(handles)
     All_amp = Avg_line(logical(co_peaks));
     Amp_mean = mean(All_amp);
     Amp_std = std(All_amp);
-    Amp_CV = Amp_std./Amp_mean;
+    Amp_CV = Amp_mean./Amp_std;
     
     %Spatial width and its CV
     BandWidth_mean = mean(w_spatial);
