@@ -210,7 +210,7 @@ handles.Progress_report.String = 'Use default parameters!';
 %Set/Display default parameters
 handles.Smooth_spatial.String = '5';
 handles.Smooth_temporal.String = '5';
-handles.Threshold.String = '0.02';
+handles.Threshold.String = '0.05';
 handles.Smooth_checkbox.Value = 1;
 
 
