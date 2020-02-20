@@ -22,7 +22,7 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_threshold
 
-% Last Modified by GUIDE v2.5 14-Feb-2020 21:58:02
+% Last Modified by GUIDE v2.5 20-Feb-2020 10:47:34
 
 % Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
@@ -1361,8 +1361,10 @@ function Clean_trace_Callback(hObject, eventdata, handles)
     %hold(handles.Regional_trace, 'off')
     %If curTrace is not define, clean the axes
     cla(handles.Regional_comparison)
-
-
+    %Clean the two traces 
+    handles.Correlate_two.UserData.trace1 = [];
+    handles.Correlate_two.UserData.trace2 = [];
+    
 
 % --- Executes on button press in Background_noise.
 function Background_noise_Callback(hObject, eventdata, handles)
@@ -1391,6 +1393,15 @@ try
     plot(handles.Regional_comparison, curTrace, 'LineWidth', 1);
     handles.Regional_comparison.XLim = [1, length(curTrace)];
     hold(handles.Regional_comparison, 'on')
+    
+    if isempty(handles.Correlate_two.UserData.trace1)
+        handles.Correlate_two.UserData.trace1 = curTrace;
+        disp('Trace 1 is defined!')
+    else
+        handles.Correlate_two.UserData.trace2 = curTrace;
+        disp('Trace 2 is defined!')
+    end
+    
 catch
     msgbox('Please define a roi first!','Error!')
 end
@@ -1428,3 +1439,45 @@ try
 catch
     msgbox('Please rotate the rectangular roi first!', 'Error!')
 end
+
+
+% --- Executes on button press in Correlate_two.
+function Correlate_two_Callback(hObject, eventdata, handles)
+% hObject    handle to Correlate_two (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Get two traces
+trace1 = hObject.UserData.trace1;
+trace2 = hObject.UserData.trace2;
+
+%Determine whether they are empty
+if isempty(trace1)||isempty(trace2)
+    msgbox('Define two traces with button [Deposit trace].', 'Error')
+    return
+end
+
+%Regress out background noise if provided
+if isfield(handles.Background_noise.UserData, 'Avg_noise')
+	Avg_noise = handles.Background_noise.UserData.Avg_noise;
+    corr_two = partialcorr(trace1,trace2,Avg_noise);
+    noise_flag = '1';
+else
+    corr_two = corr(trace1,trace2);
+    noise_flag = '0';
+    msgbox('Background noise is not defined!', 'Warning')    
+end
+
+disp(['The correlation between current two traces is: ' num2str(corr_two)])
+save(['Correlation_' noise_flag '_2traces.mat'],'corr_two');
+
+
+
+% --- Executes during object creation, after setting all properties.
+function Correlate_two_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Correlate_two (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+%Initialize two traces to be empty
+hObject.UserData.trace1 = [];
+hObject.UserData.trace2 = [];
