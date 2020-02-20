@@ -1465,9 +1465,10 @@ if isfield(handles.Background_noise.UserData, 'Avg_noise')
 else
     corr_two = corr(trace1,trace2);
     noise_flag = '0';
-    msgbox('Background noise is not defined!', 'Warning')    
+    warning('Background noise is not defined!')    
 end
 
+msgbox(['The correlation between current two traces is: ' num2str(corr_two)])
 disp(['The correlation between current two traces is: ' num2str(corr_two)])
 save(['Correlation_' noise_flag '_2traces.mat'],'corr_two');
 
