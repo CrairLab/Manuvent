@@ -22,7 +22,7 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_threshold
 
-% Last Modified by GUIDE v2.5 20-Feb-2020 10:47:34
+% Last Modified by GUIDE v2.5 20-Feb-2020 12:56:42
 
 % Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
@@ -106,6 +106,7 @@ handles.Background_noise.UserData = [];
 handles.Line_scan.UserData = [];
 handles.Rotate_rectangle.UserData = [];
 handles.Save_cropped.UserData = [];
+handles.Load_noise.UserData = [];
 
 %Show loading progress
 set(handles.Text_load, 'Visible', 'On')
@@ -1458,19 +1459,31 @@ if isempty(trace1)||isempty(trace2)
 end
 
 %Regress out background noise if provided
-if isfield(handles.Background_noise.UserData, 'Avg_noise')
-	Avg_noise = handles.Background_noise.UserData.Avg_noise;
-    corr_two = partialcorr(trace1,trace2,Avg_noise);
-    noise_flag = '1';
+if isfield(handles.Load_noise.UserData, 'Loaded_noise')
+        Avg_noise = handles.Load_noise.UserData.Loaded_noise;
+        disp('Use loaded noise to compute partial correlation!')
+        noise_flag = '1';
+        try
+            corr_two = partialcorr(trace1,trace2,Avg_noise);
+        catch
+            warning('Mismatrch between input traces and noise trace!')
+            disp('Do not regress out provied noise!')
+            corr_two = corr(trace1,trace2);
+            noise_flag = '0';
+        end
+elseif isfield(handles.Background_noise.UserData, 'Avg_noise')
+        Avg_noise = handles.Background_noise.UserData.Avg_noise;
+        noise_flag = '2';
+        corr_two = partialcorr(trace1,trace2,Avg_noise);
 else
     corr_two = corr(trace1,trace2);
     noise_flag = '0';
-    warning('Background noise is not defined!')    
+    warning('Background noise is not defined!') 
 end
 
 msgbox(['The correlation between current two traces is: ' num2str(corr_two)])
 disp(['The correlation between current two traces is: ' num2str(corr_two)])
-save(['Correlation_' noise_flag '_2traces.mat'],'corr_two');
+save(['Correlation_' noise_flag '_2traces.mat'],'corr_two', 'trace1', 'trace2');
 
 
 
@@ -1482,3 +1495,17 @@ function Correlate_two_CreateFcn(hObject, eventdata, handles)
 %Initialize two traces to be empty
 hObject.UserData.trace1 = [];
 hObject.UserData.trace2 = [];
+
+
+% --- Executes on button press in Load_noise.
+function Load_noise_Callback(hObject, eventdata, handles)
+% hObject    handle to Load_noise (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+try
+    uiopen('Please load the noise trace!');
+    Loaded_noise = Avg_out_dFoF(:);
+    hObject.UserData.Loaded_noise = Loaded_noise;
+catch
+    msgbox('Can not load noise trace!','Error!')
+end
