@@ -1076,6 +1076,7 @@ function crop_movie(m, handles)
                 h_rec.Vertices(:,2), sz(1), sz(2)); 
             %Add ROIMoved listerner to monitor movement
             addlistener(h_rec,'ROIMoved',@(src,evt)UpdateRecPos(src,evt,handles));
+            hold on
             %Save the current rectangular roi 
             handles.Save_cropped.UserData.h_rec = h_rec;
         case 3 %Free crop for background noise
