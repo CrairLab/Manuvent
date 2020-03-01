@@ -22,7 +22,7 @@ function varargout = Manuvent_threshold(varargin)
 
 % Edit the above text to modify the response to help Manuvent_threshold
 
-% Last Modified by GUIDE v2.5 14-Feb-2020 21:58:02
+% Last Modified by GUIDE v2.5 20-Feb-2020 12:56:42
 
 % Version 0.0.6 02/02/2020 yixiang.wang@yale.edu
 
@@ -106,6 +106,7 @@ handles.Background_noise.UserData = [];
 handles.Line_scan.UserData = [];
 handles.Rotate_rectangle.UserData = [];
 handles.Save_cropped.UserData = [];
+handles.Load_noise.UserData = [];
 
 %Show loading progress
 set(handles.Text_load, 'Visible', 'On')
@@ -1088,6 +1089,7 @@ function crop_movie(m, handles)
                 h_rec.Vertices(:,2), sz(1), sz(2)); 
             %Add ROIMoved listerner to monitor movement
             addlistener(h_rec,'ROIMoved',@(src,evt)UpdateRecPos(src,evt,handles));
+            hold on
             %Save the current rectangular roi 
             handles.Save_cropped.UserData.h_rec = h_rec;
         case 3 %Free crop for background noise
@@ -1374,8 +1376,10 @@ function Clean_trace_Callback(~, eventdata, handles)
     %hold(handles.Regional_trace, 'off')
     %If curTrace is not define, clean the axes
     cla(handles.Regional_comparison)
-
-
+    %Clean the two traces 
+    handles.Correlate_two.UserData.trace1 = [];
+    handles.Correlate_two.UserData.trace2 = [];
+    
 
 % --- Executes on button press in Background_noise.
 function Background_noise_Callback(hObject, eventdata, handles)
@@ -1404,6 +1408,15 @@ try
     plot(handles.Regional_comparison, curTrace, 'LineWidth', 1);
     handles.Regional_comparison.XLim = [1, length(curTrace)];
     hold(handles.Regional_comparison, 'on')
+    
+    if isempty(handles.Correlate_two.UserData.trace1)
+        handles.Correlate_two.UserData.trace1 = curTrace;
+        disp('Trace 1 is defined!')
+    else
+        handles.Correlate_two.UserData.trace2 = curTrace;
+        disp('Trace 2 is defined!')
+    end
+    
 catch
     msgbox('Please define a roi first!','Error!')
 end
@@ -1440,4 +1453,73 @@ try
     LineMapScan('hObject');
 catch
     msgbox('Please rotate the rectangular roi first!', 'Error!')
+end
+
+
+% --- Executes on button press in Correlate_two.
+function Correlate_two_Callback(hObject, eventdata, handles)
+% hObject    handle to Correlate_two (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Get two traces
+trace1 = hObject.UserData.trace1;
+trace2 = hObject.UserData.trace2;
+
+%Determine whether they are empty
+if isempty(trace1)||isempty(trace2)
+    msgbox('Define two traces with button [Deposit trace].', 'Error')
+    return
+end
+
+%Regress out background noise if provided
+if isfield(handles.Load_noise.UserData, 'Loaded_noise')
+        Avg_noise = handles.Load_noise.UserData.Loaded_noise;
+        disp('Use loaded noise to compute partial correlation!')
+        noise_flag = '1';
+        try
+            corr_two = partialcorr(trace1,trace2,Avg_noise);
+        catch
+            warning('Mismatrch between input traces and noise trace!')
+            disp('Do not regress out provied noise!')
+            corr_two = corr(trace1,trace2);
+            noise_flag = '0';
+        end
+elseif isfield(handles.Background_noise.UserData, 'Avg_noise')
+        Avg_noise = handles.Background_noise.UserData.Avg_noise;
+        noise_flag = '2';
+        corr_two = partialcorr(trace1,trace2,Avg_noise);
+else
+    corr_two = corr(trace1,trace2);
+    noise_flag = '0';
+    warning('Background noise is not defined!') 
+end
+
+msgbox(['The correlation between current two traces is: ' num2str(corr_two)])
+disp(['The correlation between current two traces is: ' num2str(corr_two)])
+save(['Correlation_' noise_flag '_2traces.mat'],'corr_two', 'trace1', 'trace2');
+
+
+
+% --- Executes during object creation, after setting all properties.
+function Correlate_two_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Correlate_two (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+%Initialize two traces to be empty
+hObject.UserData.trace1 = [];
+hObject.UserData.trace2 = [];
+
+
+% --- Executes on button press in Load_noise.
+function Load_noise_Callback(hObject, eventdata, handles)
+% hObject    handle to Load_noise (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+try
+    uiopen('Please load the noise trace!');
+    Loaded_noise = Avg_out_dFoF(:);
+    hObject.UserData.Loaded_noise = Loaded_noise;
+catch
+    msgbox('Can not load noise trace!','Error!')
 end
