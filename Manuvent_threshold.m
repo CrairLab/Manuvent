@@ -194,6 +194,14 @@ function Save_data_Callback(hObject, eventdata, handles)
 filename = handles.Load_movie.UserData.filename;
 allROI_info = handles.listbox.UserData.allROI_info;
 allROI = handles.listbox.UserData.allROI;
+
+%Check whether all Point objects are valid
+allROI = allROI(isvalid([allROI{:}]));
+allROI_info = allROI_info(isvalid([allROI{:}]),:);
+handles.listbox.UserData.allROI = allROI;
+handles.listbox.UserData.allROI_info = allROI_info;
+
+%Get the start and end frames
 start_frame = min(allROI_info(:,3));
 end_frame = max(allROI_info(:,4));
 %save all ROI(events) info as a .mat file
@@ -689,6 +697,11 @@ try
     combineROI_info = [];
     for i = 1:size(fileList,1)
         load(fileList(i).name);
+        
+        %Check if all Point objects are valid
+        allROI = allROI(isvalid([allROI{:}]));
+        allROI_info = allROI_info(isvalid([allROI{:}]),:);
+
         combineROI = [combineROI allROI];
         combineROI_info = [combineROI_info; allROI_info];
     end
@@ -1354,7 +1367,7 @@ function updatePlotting(roi,~,handles)
 
     
 % --- Executes on button press in Clean_trace.
-function Clean_trace_Callback(hObject, eventdata, handles)
+function Clean_trace_Callback(~, eventdata, handles)
 % hObject    handle to Clean_trace (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
