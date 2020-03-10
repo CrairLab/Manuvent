@@ -93,10 +93,10 @@ end
 
 function showLine2D(h, Avg_line)
 %Show 2D line map at the Line_2D axes
-    imagesc(h, Avg_line'); colormap jet;
+    imagesc(h, Avg_line'); colormap parula;
     colorbar(h); 
     axis(h, 'image');
-    caxis(h,[0, prctile(Avg_line(:),95)]);
+    caxis(h,[0, prctile(Avg_line(:),98)]);
     daspect(h,[10,1,1])
 
 
@@ -253,6 +253,10 @@ try
         checkname = [filename(1:end-12) 'moveAssess.mat'];
         if ~isempty(dir(checkname))
             load(checkname)
+            if ~any(movIdx_saved == 0)
+                %If movIdx_saved is an all-one vector
+                movIdx_saved = NormTform_all < 0.51;
+            end
             Save_vec = logical(Save_vec.*movIdx_saved);
             disp('Incorporate motion correction information!')
         end
@@ -477,8 +481,10 @@ function Save_results_Callback(hObject, eventdata, handles)
 try
     LineScanStat = LineScanStatistics(handles);
     handles.Save_results.UserData.LinScanStat = LineScanStat;
+    T_string = handles.Threshold.String;
+    
     filename = handles.Load_rectangle.UserData.filename;
-    uisave({'LineScanStat'}, [filename(1:end-4) '_LinScanStat.mat']);
+    uisave({'LineScanStat'}, [filename(1:end-4) '_LinScanStat_' T_string '.mat']);
     handles.Progress_report.String = 'Scan statistics saved!';
 catch
     msgbox('Please do line scanning first!', 'Warning!')
