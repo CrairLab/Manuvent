@@ -313,7 +313,7 @@ function slider1_Callback(hObject, eventdata, handles)
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 curMovie = handles.output.UserData.curMovie; %Get current movie
 curIdx = round(get(hObject, 'Value'));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1);
+im = imshow(mat2gray(curMovie(:,:,curIdx), [0, 0.3]), 'Parent', handles.Movie_axes1);
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.Frame, 'String', num2str(curIdx));
@@ -348,7 +348,7 @@ end
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
+im = imshow(mat2gray(curMovie(:,:,curIdx), [0, 0.3]), 'Parent', handles.Movie_axes1); %Display current frame
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
@@ -370,7 +370,7 @@ end
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
+im = imshow(mat2gray(curMovie(:,:,curIdx), [0, 0.3]), 'Parent', handles.Movie_axes1); %Display current frame
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
@@ -419,7 +419,7 @@ try
         set(handles.Frame, 'String', num2str(curIdx));
         set(handles.slider1, 'Value', curIdx);
         handles.Play_control.UserData.curIdx = curIdx; %Update/store current frame index
-        imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1);
+        imshow(mat2gray(curMovie(:,:,curIdx), [0, 0.3]), 'Parent', handles.Movie_axes1);
         curIdx = curIdx + 1; %Movie to the next frame
         pause(0.1);
         
@@ -428,7 +428,7 @@ try
     %[x, y] = getpts(handles.Movie_axes1);
     %plot(handles.Movie_axes1, x, y, 'ro')
     %roi = drawpoint(handles.Movie_axes1);
-    im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
+    im = imshow(mat2gray(curMovie(:,:,curIdx), [0, 0.3]), 'Parent', handles.Movie_axes1); %Display current frame
     set(im, 'ButtonDownFcn', {@markEvents, handles});
     hObject.UserData.IsFirstCall = 0; %Now it's not the first time the callback being called
     
@@ -585,7 +585,7 @@ curMovie = handles.output.UserData.curMovie;
 handles.Play_control.UserData.curIdx = curIdx;
 set(handles.slider1, 'Value', curIdx);
 set(handles.Frame, 'String', num2str(curIdx));
-im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1); %Display current frame
+im = imshow(mat2gray(curMovie(:,:,curIdx), [0, 0.3]), 'Parent', handles.Movie_axes1); %Display current frame
 set(im, 'ButtonDownFcn', {@markEvents, handles});
 
 
@@ -639,7 +639,7 @@ try
     curIdx = str2double(get(hObject, 'String'));
     handles.Play_control.UserData.curIdx = curIdx;
     curMovie = handles.output.UserData.curMovie;
-    im = imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.Movie_axes1);
+    im = imshow(mat2gray(curMovie(:,:,curIdx), [0, 0.3]), 'Parent', handles.Movie_axes1);
     set(im, 'ButtonDownFcn', {@markEvents, handles});
     set(handles.slider1, 'Value', curIdx);
 catch
