@@ -129,7 +129,12 @@ function LoadNewMovie(path, filename, handles)
     handles.Current_filename.String = filename;
 
     %Get specific tag
-    curTag = filename(1:14);
+    try
+        curTag = filename(1:14);
+        warning('Filename too short, use a thin tag...')
+    catch
+        curTag = filename(1:4);
+    end
     fileList = dir(['*' curTag '*' '.mat']);
     handles.Load_movie.UserData.fileList = fileList;
 
