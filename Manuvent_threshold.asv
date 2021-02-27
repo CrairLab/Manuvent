@@ -1558,5 +1558,5 @@ try
     PickSeedMap('hObject');
     
 catch
-    msgbox('Error calculating correlations!')
+    msgbox('No trace is defined!')
 end
